@@ -1,0 +1,70 @@
+body {
+    background: #D0DCE0;
+}
+
+table.main {
+    text-align: left;
+    width: 1024px;
+    background: #FFFFFF;
+
+    padding-top: 15px;
+    padding-bottom: 15px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+table {
+    text-align: left;
+}
+
+table td {
+    vertical-align: middle;
+    padding-left: 3px;
+    padding-right: 10px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+
+hr {
+    border-color: transparent;
+    border-top-color: #065a76;
+}
+
+h2 {
+    margin-top: 15px;
+    margin-bottom: 15px;
+    margin-left: 0px;
+    margin-right: 0px;
+}
+
+form {
+    margin: 0px;
+}
+
+a:link {
+  color: #065a76;
+  text-decoration: none;
+  background: none;
+  font-weight: bold;
+}
+
+a:visited {
+  color: #065a76;
+  text-decoration: none;
+  background: none;
+  font-weight: bold;
+}
+
+a:active {
+  color: #065a76;
+  text-decoration: none;
+  background: none;
+  font-weight: bold;
+}
+
+a:hover {
+  color: #000000;
+  text-decoration: underline;
+  background: none;
+  font-weight: bold;
+}

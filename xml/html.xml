@@ -13,35 +13,45 @@
 <meta name="robots" content="index">
 </head>
 <body>
+
+<center><table class="main"><tr><td>
 ]]></begin>
 
 <header><![CDATA[
+
 <h1>Korel RESTful Web Service</h1>
 
-<hr>
-<div class="menu">
-    <a href="/">Home</a> -
-    <a href="/help">Help</a> -
-    <a href="/user/register">Create New Account</a>
-</div>
-<hr>
-
-<table>
-<tr><td>
-    <form action="/jobs" method="post">
-    <input type="submit" value="Start new job">
-    </form>
-</td>
-<td>
-    <form action="/jobs" method="get">
-    <input type="submit" value="List jobs">
-    </form>
 </td></tr>
-</table>
+<tr><td>
+
+    <hr>
+    <div class="menu">
+        <a href="/">Home</a> -
+        <a href="/help">Help</a> -
+        <a href="/user/register">Create New Account</a>
+    </div>
+    <hr>
+
+</td></tr>
+<tr><td>
+
+    <table>
+    <tr><td>
+        <form action="/jobs" method="post">
+        <input type="submit" value="Start new job">
+        </form>
+    </td>
+    <td>
+        <form action="/jobs" method="get">
+        <input type="submit" value="List jobs">
+        </form>
+    </td></tr>
+    </table>
 
 ]]></header>
 
 <end><![CDATA[
+</td></tr></table></center>
 </body>
 </html>
 ]]></end>

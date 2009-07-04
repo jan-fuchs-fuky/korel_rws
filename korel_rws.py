@@ -8,6 +8,7 @@ import cherrypy
 
 from lxml import etree
 from cherrypy.lib import httpauth
+from cherrypy.lib.static import serve_file
 
 import jobs
 import template
@@ -20,6 +21,11 @@ class RootServer:
     @cherrypy.expose
     def user(self):
         return "user"
+
+    @cherrypy.expose
+    def css(self, file):
+        file_path = os.path.abspath("./css/%s" % file)
+        return serve_file(file_path)
 
     @cherrypy.expose
     def jobs(self, id=None, action=None, file=None, korel_dat=None, korel_par=None):
@@ -48,6 +54,8 @@ class RootServer:
                 return jobs.phase(self.username, self.id)
             elif (self.action == "results"):
                 return jobs.results(self.username)
+            elif (self.action == "remove"):
+                return jobs.remove(self.username, self.id)
             elif (self.action == "result-id"):
                 if (self.file is None):
                     return jobs.result_id(self.username, self.id)

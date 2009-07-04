@@ -2,10 +2,11 @@
 
 import os
 import time
+import signal
 
 from cherrypy.lib.static import serve_file
 from StringIO import StringIO
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, call
 
 import template
 
@@ -29,7 +30,11 @@ def get_job_dir(username, id):
     raise Exception("Job directory '%s' does not exist" % job_dir)
 
 def start(username, korel_dat, korel_par):
-    id = 0
+    id = 1
+
+    if (korel_dat.filename == "") or (korel_par.filename == ""):
+        result = "<start><id>-1</id></start>"
+        return template.xml2html(StringIO(result))
 
     # TODO: zjistit zda-li lze do adresare zapisovat
 
@@ -47,18 +52,60 @@ def start(username, korel_dat, korel_par):
                 id += 1
                 continue
 
-    if (korel_dat is not None) and (korel_par is not None):
-        save_upload_file(korel_dat, "%s/korel.dat" % job_dir)
-        save_upload_file(korel_par, "%s/korel.par" % job_dir)
+    result = "<start><id>%i</id></start>" % id
+    save_upload_file(korel_dat, "%s/korel.dat" % job_dir)
+    save_upload_file(korel_par, "%s/korel.par" % job_dir)
 
     Popen("nohup ./bin/korel.py %s &" % job_dir, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
-    
-    return "%i" % id
+
+    return template.xml2html(StringIO(result))
 
 def cancel(username, id):
     job_dir = get_job_dir(username, id)
 
-    return "Cancel job"
+    file = open("%s/korel.pid" % job_dir, "r")
+    pid = int(file.read().strip())
+    file.close()
+
+    kill(pid)
+
+    result = "<body><![CDATA["
+    result += "<h2>Kill job</h2>"
+    result += "Job %s user %s canceled." % (id, username)
+    result += "]]></body>"
+
+    return template.xml2html(StringIO(result))
+
+def kill(pid):
+    try:
+        os.kill(pid, signal.SIGTERM)
+
+        i = 0
+        while (call("ps -p %i -o pid=" % pid, shell=True) != 0):
+            i += 1
+            if (i > 5):
+                os.kill(pid, signal.SIGKILL)
+                break
+            time.sleep(1)
+    except OSError:
+        pass
+
+def remove(username, id):
+    job_dir = get_job_dir(username, id)
+
+    file = open("%s/korel.pid" % job_dir, "r")
+    pid = int(file.read().strip())
+    file.close()
+
+    kill(pid)
+    call(["rm", "-rf", job_dir])
+
+    result = "<body><![CDATA["
+    result += "<h2>Remove job</h2>"
+    result += "Job %s user %s removed." % (id, username)
+    result += "]]></body>"
+
+    return template.xml2html(StringIO(result))
 
 def list(username):
     result = "<jobslist>\n"
@@ -66,6 +113,10 @@ def list(username):
 
     root, dirs, files = os.walk("%s/%s" % (JOBS_PATH, username)).next()
     for dir in dirs:
+        # skip hidden directory
+        if (dir[0] == "."):
+            continue
+
         returncode = "%s/%s/returncode.txt" % (root, dir)
         if (os.path.isfile(returncode)):
             state = "success"
@@ -91,6 +142,10 @@ def result_id(username, id):
 
     root, dirs, files = os.walk(job_dir).next()
     for file in files:
+        # skip hidden file
+        if (file[0] == "."):
+            continue
+
         result += "<link>%s</link>\n" % file
 
     result += "</result>\n"

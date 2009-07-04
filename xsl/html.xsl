@@ -34,11 +34,27 @@
         </xsl:if>
         <!-- END result-id -->
 
+        <!-- BEGIN start -->
+        <xsl:if test="name(/*)='start'">
+            <xsl:variable name="id" select="/start/id"/>
+
+            <h2>Start new job</h2>
+            <xsl:choose>
+                <xsl:when test="$id='-1'">
+                    Failure. Must upload files korel.dat and korel.par.
+                </xsl:when>
+                <xsl:otherwise>
+                    Start job <xsl:value-of select="$id"/> success.
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:if>
+        <!-- END start -->
+
         <!-- BEGIN jobslist -->
         <xsl:if test="name(/*)='jobslist'">
             <h2>List of jobs user <xsl:value-of select="/jobslist/user"/></h2>
             <table>
-            <tr><td><b>ID</b></td><td><b>State</b></td><td></td></tr>
+            <tr><td><b>ID</b></td><td colspan="4"><b>State</b></td></tr>
 
             <xsl:for-each select="jobslist/job">
                 <xsl:variable name="id" select="./id"/>
@@ -51,12 +67,32 @@
                 <td>
                 <xsl:choose>
                     <xsl:when test="$state='success'">
-                    <a href="/jobs/{$id}/result-id">show result</a>
+                        <form action="/jobs/{$id}/result-id" method="get">
+                        <input type="submit" value="show result"/>
+                        </form>
                     </xsl:when>
                     <xsl:otherwise>
-                    <a href="/jobs/{$id}">kill job</a>
+                        <form action="/jobs/{$id}" method="post">
+                        <input type="submit" value="kill job"/>
+                        </form>
                     </xsl:otherwise>
                 </xsl:choose>
+                </td>
+
+                <td>
+                    <xsl:if test="$state='success'">
+                        <form action="/jobs/{$id}" method="get">
+                        <input type="submit" value="run again"/>
+                        </form>
+                    </xsl:if>
+                </td>
+
+                <td>
+                    <xsl:if test="$state='success'">
+                        <form action="/jobs/{$id}/remove" method="get">
+                        <input type="submit" value="remove"/>
+                        </form>
+                    </xsl:if>
                 </td>
 
                 </tr><xsl:text>&#xa;</xsl:text>
