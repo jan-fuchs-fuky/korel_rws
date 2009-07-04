@@ -1,0 +1,3 @@
+Run new job:
+
+    $ curl --insecure -u admin:heslo -X POST https://localhost:8000/jobs

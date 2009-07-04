@@ -1,0 +1,13 @@
+#! /usr/bin/env bash
+
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+
+while [ -h "${SCRIPT_PATH}" ]; do
+    SCRIPT_PATH=$(readlink "${SCRIPT_PATH}")
+done
+
+cd $(dirname "${SCRIPT_PATH}")
+
+PYTHONPATH="./lib" python2.5 ./korel_rws.py
+
+cd - &>/dev/null

@@ -1,0 +1,7 @@
+#! /usr/bin/env bash
+
+gvim -p \
+./korel_rws.py \
+./lib/jobs.py \
+./bin/korel.py \
+./korel_rws

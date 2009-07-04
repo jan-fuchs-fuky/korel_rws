@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<body><![CDATA[
+<form action="jobs" method="post" enctype="multipart/form-data">
+korel.dat: <input type="file" name="korel_dat"><br>
+korel.par: <input type="file" name="korel_par"><br>
+<input type="submit" value="Start">
+</form>
+]]></body>
