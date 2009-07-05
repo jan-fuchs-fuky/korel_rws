@@ -56,6 +56,8 @@ class RootServer:
                 return jobs.results(self.username)
             elif (self.action == "remove"):
                 return jobs.remove(self.username, self.id)
+            elif (self.action == "again"):
+                return jobs.again(self.username, self.id)
             elif (self.action == "result-id"):
                 if (self.file is None):
                     return jobs.result_id(self.username, self.id)
@@ -76,6 +78,8 @@ class RootServer:
                 return template.xml2html("./xml/start_new_job.xml")
 
             return jobs.start(self.username, self.korel_dat, self.korel_par)
+        elif (self.action == "againstart"):
+            return jobs.againstart(self.username, self.id, self.korel_par)
         else:
             return jobs.cancel(self.username, self.id)
 

@@ -22,15 +22,24 @@
         <!-- BEGIN result-id -->
         <xsl:if test="name(/*)='result'">
             <xsl:variable name="id" select="/result/id"/>
+            <xsl:variable name="phase" select="/result/phase"/>
 
-            <h2>Result of job <xsl:value-of select="$id"/> user <xsl:value-of select="/result/user"/></h2>
+            <h2>Result of job</h2>
 
-            <xsl:for-each select="result/link">
-                <xsl:variable name="link" select="."/>
-                <a href="/jobs/{$id}/result-id/{$link}">
-                <xsl:value-of select="$link"/>
-                </a><br/><xsl:text>&#xa;</xsl:text>
-            </xsl:for-each>
+            <p>
+            Job <xsl:value-of select="$id"/>
+            user <xsl:value-of select="/result/user"/>
+            <xsl:text> </xsl:text><xsl:value-of select="$phase"/>.
+            </p>
+
+            <xsl:if test="not($phase='working')">
+                <xsl:for-each select="result/link">
+                    <xsl:variable name="link" select="."/>
+                    <a href="/jobs/{$id}/result-id/{$link}">
+                    <xsl:value-of select="$link"/>
+                    </a><br/><xsl:text>&#xa;</xsl:text>
+                </xsl:for-each>
+            </xsl:if>
         </xsl:if>
         <!-- END result-id -->
 
@@ -49,6 +58,19 @@
             </xsl:choose>
         </xsl:if>
         <!-- END start -->
+
+        <!-- BEGIN again -->
+        <xsl:if test="name(/*)='again'">
+            <xsl:variable name="new_id" select="/again/new_id"/>
+
+            <h2>Again job <xsl:value-of select="/again/id"/> as job <xsl:value-of select="$new_id"/></h2>
+
+            <form action="/jobs/{$new_id}/againstart" method="post">
+            <p><textarea name="korel_par" cols="80" rows="15"><xsl:value-of select="/again/korel_par"/></textarea></p>
+            <p><input type="submit" value="Start"/></p>
+            </form>
+        </xsl:if>
+        <!-- END again -->
 
         <!-- BEGIN jobslist -->
         <xsl:if test="name(/*)='jobslist'">
@@ -73,26 +95,22 @@
                     </xsl:when>
                     <xsl:otherwise>
                         <form action="/jobs/{$id}" method="post">
-                        <input type="submit" value="kill job"/>
+                        <input type="submit" value="cancel job"/>
                         </form>
                     </xsl:otherwise>
                 </xsl:choose>
                 </td>
 
                 <td>
-                    <xsl:if test="$state='success'">
-                        <form action="/jobs/{$id}" method="get">
-                        <input type="submit" value="run again"/>
-                        </form>
-                    </xsl:if>
+                    <form action="/jobs/{$id}/again" method="get">
+                    <input type="submit" value="run again"/>
+                    </form>
                 </td>
 
                 <td>
-                    <xsl:if test="$state='success'">
-                        <form action="/jobs/{$id}/remove" method="get">
-                        <input type="submit" value="remove"/>
-                        </form>
-                    </xsl:if>
+                    <form action="/jobs/{$id}/remove" method="get">
+                    <input type="submit" value="remove"/>
+                    </form>
                 </td>
 
                 </tr><xsl:text>&#xa;</xsl:text>

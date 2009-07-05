@@ -29,12 +29,8 @@ def get_job_dir(username, id):
 
     raise Exception("Job directory '%s' does not exist" % job_dir)
 
-def start(username, korel_dat, korel_par):
+def make_id_jobdir(username):
     id = 1
-
-    if (korel_dat.filename == "") or (korel_par.filename == ""):
-        result = "<start><id>-1</id></start>"
-        return template.xml2html(StringIO(result))
 
     # TODO: zjistit zda-li lze do adresare zapisovat
 
@@ -52,11 +48,57 @@ def start(username, korel_dat, korel_par):
                 id += 1
                 continue
 
+    return [id, job_dir]
+
+def start_korel(job_dir):
+    Popen("nohup ./bin/korel.py %s &" % job_dir, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+
+def start(username, korel_dat, korel_par):
+    if (korel_dat.filename == "") or (korel_par.filename == ""):
+        result = "<start><id>-1</id></start>"
+        return template.xml2html(StringIO(result))
+
+    id, job_dir = make_id_jobdir(username)
+
     result = "<start><id>%i</id></start>" % id
     save_upload_file(korel_dat, "%s/korel.dat" % job_dir)
     save_upload_file(korel_par, "%s/korel.par" % job_dir)
 
-    Popen("nohup ./bin/korel.py %s &" % job_dir, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+    start_korel(job_dir)
+
+    return template.xml2html(StringIO(result))
+
+def again(username, id):
+    job_dir = get_job_dir(username, id)
+    korel_dat = "%s/korel.dat" % job_dir
+    korel_par = "%s/korel.par" % job_dir
+
+    new_id, new_job_dir = make_id_jobdir(username)
+
+    if (call(["cp", korel_dat, new_job_dir]) != 0):
+        raise Exception("Copy korel.dat failure")
+
+    file = open(korel_par, "r")
+    korel_par_buffer = file.read()
+    file.close()
+
+    result = "<again>"
+    result += "<id>%s</id>" % id
+    result += "<new_id>%s</new_id>" % new_id
+    result += "<korel_par><![CDATA[%s]]></korel_par>" % korel_par_buffer
+    result += "</again>"
+
+    return template.xml2html(StringIO(result))
+
+def againstart(username, id, korel_par):
+    job_dir = get_job_dir(username, id)
+    result = "<start><id>%s</id></start>" % id
+
+    file = open("%s/korel.par" % job_dir, "w")
+    file.write(korel_par)
+    file.close()
+
+    start_korel(job_dir)
 
     return template.xml2html(StringIO(result))
 
@@ -70,7 +112,7 @@ def cancel(username, id):
     kill(pid)
 
     result = "<body><![CDATA["
-    result += "<h2>Kill job</h2>"
+    result += "<h2>Cancel job</h2>"
     result += "Job %s user %s canceled." % (id, username)
     result += "]]></body>"
 
@@ -93,11 +135,15 @@ def kill(pid):
 def remove(username, id):
     job_dir = get_job_dir(username, id)
 
-    file = open("%s/korel.pid" % job_dir, "r")
-    pid = int(file.read().strip())
-    file.close()
+    try:
+        file = open("%s/korel.pid" % job_dir, "r")
+        pid = int(file.read().strip())
+        file.close()
 
-    kill(pid)
+        kill(pid)
+    except:
+        pass
+
     call(["rm", "-rf", job_dir])
 
     result = "<body><![CDATA["
@@ -136,17 +182,33 @@ def results(username):
 
 def result_id(username, id):
     job_dir = get_job_dir(username, id)
+    returncode = "%s/returncode.txt" % job_dir
+
+    if (os.path.isfile(returncode)):
+        file = open(returncode, "r")
+        rc = int(file.read().strip())
+        file.close()
+
+        if (rc == 0):
+            phase = "finished"
+        else:
+            phase = "failure"
+    else:
+        phase = "working"
+
     result = "<result>\n"
     result += "<user>%s</user>\n" % username
     result += "<id>%s</id>\n" % id
+    result += "<phase>%s</phase>\n" % phase
 
-    root, dirs, files = os.walk(job_dir).next()
-    for file in files:
-        # skip hidden file
-        if (file[0] == "."):
-            continue
+    if (phase != "working"):
+        root, dirs, files = os.walk(job_dir).next()
+        for file in files:
+            # skip hidden file
+            if (file[0] == "."):
+                continue
 
-        result += "<link>%s</link>\n" % file
+            result += "<link>%s</link>\n" % file
 
     result += "</result>\n"
 
