@@ -156,6 +156,8 @@ def remove(username, id):
     return template.xml2html(StringIO(result))
 
 def list(username):
+    dirs_dict = {}
+
     result = "<jobslist>\n"
     result += "<user>%s</user>\n" % username
 
@@ -165,6 +167,12 @@ def list(username):
         if (dir[0] == "."):
             continue
 
+        mtime = os.stat("%s/%s" % (root, dir)).st_mtime
+        dirs_dict.update({dir: mtime})
+
+    # sort key dir by value mtime
+    for item in sorted(dirs_dict.iteritems(), key=lambda (k,v): (v,k), reverse=True):
+        dir = item[0]
         phase_value = get_pahase("%s/%s" % (root, dir))
 
         result += "<job>\n"

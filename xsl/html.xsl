@@ -40,6 +40,10 @@
             <xsl:text> </xsl:text><xsl:value-of select="$phase"/>.
             </p>
 
+            <p><form action="/jobs/{$id}/again" method="get">
+            <input type="submit" value="run again"/>
+            </form></p>
+
             <xsl:if test="not($phase='EXECUTING')">
                 <xsl:for-each select="result/link">
                     <xsl:variable name="link" select="."/>

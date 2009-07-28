@@ -36,6 +36,16 @@ if __name__ == '__main__':
         print >>sys.stderr, "%s takes 2 argument (%i given)" % (sys.argv[0], argc)
         sys.exit(1)
 
+    proc_fd = "/proc/%i/fd" % os.getpid()
+    fd_list = os.listdir(proc_fd)
+    for fd in fd_list:
+        fd = int(fd)
+        fd_path = "%s/%i" % (proc_fd, fd)
+        if (os.path.islink(fd_path)):
+            name = os.readlink(fd_path)
+            if (name.find("socket") != -1):
+                os.close(fd)
+
     korel_bin = os.path.abspath("./bin/korel")
     korel_pwd = sys.argv[1]
     os.chdir(korel_pwd)
