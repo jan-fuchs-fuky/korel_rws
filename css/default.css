@@ -42,29 +42,34 @@ form {
 }
 
 a:link {
-  color: #065a76;
-  text-decoration: none;
-  background: none;
-  font-weight: bold;
+    color: #065a76;
+    text-decoration: none;
+    background: none;
+    font-weight: bold;
 }
 
 a:visited {
-  color: #065a76;
-  text-decoration: none;
-  background: none;
-  font-weight: bold;
+    color: #065a76;
+    text-decoration: none;
+    background: none;
+    font-weight: bold;
 }
 
 a:active {
-  color: #065a76;
-  text-decoration: none;
-  background: none;
-  font-weight: bold;
+    color: #065a76;
+    text-decoration: none;
+    background: none;
+    font-weight: bold;
 }
 
 a:hover {
-  color: #000000;
-  text-decoration: underline;
-  background: none;
-  font-weight: bold;
+    color: #000000;
+    text-decoration: underline;
+    background: none;
+    font-weight: bold;
+}
+
+div.errmsg {
+    color: #FF0000;
+    margin-bottom: 10px;
 }

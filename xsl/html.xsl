@@ -143,6 +143,11 @@
         <!-- BEGIN register_user -->
         <xsl:if test="name(/*)='register_user'">
             <h2>Register user</h2>
+
+            <xsl:if test="not(/register_user/errmsg='')">
+                <div class="errmsg"><xsl:value-of select="/register_user/errmsg"/></div>
+            </xsl:if>
+
             <form action="/user/register" method="post" enctype="multipart/form-data">
                 <table>
                 <tr>
