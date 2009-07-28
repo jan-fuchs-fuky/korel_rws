@@ -16,10 +16,18 @@
 <xsl:variable name="html" select="document('../xml/html.xml')/html"/>
 
 <xsl:template match="/">
-        <xsl:value-of select="$html/begin" disable-output-escaping="yes"/>
+        <xsl:choose>
+            <xsl:when test="name(/*)='phase'">
+                <xsl:value-of select="$html/begin_refresh" disable-output-escaping="yes"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:value-of select="$html/begin" disable-output-escaping="yes"/>
+            </xsl:otherwise>
+        </xsl:choose>
+
         <xsl:value-of select="$html/header" disable-output-escaping="yes"/>
 
-        <!-- BEGIN result-id -->
+        <!-- BEGIN results -->
         <xsl:if test="name(/*)='result'">
             <xsl:variable name="id" select="/result/id"/>
             <xsl:variable name="phase" select="/result/phase"/>
@@ -32,32 +40,40 @@
             <xsl:text> </xsl:text><xsl:value-of select="$phase"/>.
             </p>
 
-            <xsl:if test="not($phase='working')">
+            <xsl:if test="not($phase='EXECUTING')">
                 <xsl:for-each select="result/link">
                     <xsl:variable name="link" select="."/>
-                    <a href="/jobs/{$id}/result-id/{$link}">
+                    <a href="/jobs/{$id}/results/{$link}">
                     <xsl:value-of select="$link"/>
                     </a><br/><xsl:text>&#xa;</xsl:text>
                 </xsl:for-each>
             </xsl:if>
         </xsl:if>
-        <!-- END result-id -->
+        <!-- END results -->
 
-        <!-- BEGIN start -->
-        <xsl:if test="name(/*)='start'">
-            <xsl:variable name="id" select="/start/id"/>
+        <!-- BEGIN phase -->
+        <xsl:if test="name(/*)='phase'">
+            <xsl:variable name="user" select="/phase/user"/>
+            <xsl:variable name="id" select="/phase/id"/>
+            <xsl:variable name="phase" select="/phase/phase"/>
 
-            <h2>Start new job</h2>
+            <h2>Phase of job <xsl:value-of select="$id"/> user <xsl:value-of select="$user"/></h2>
             <xsl:choose>
-                <xsl:when test="$id='-1'">
-                    Failure. Must upload files korel.dat and korel.par.
+                <xsl:when test="$phase='EXECUTING'">
+                    The job is running.
+                </xsl:when>
+                <xsl:when test="$phase='COMPLETED'">
+                    The job has completed successfully.
+                </xsl:when>
+                <xsl:when test="$phase='ERROR'">
+                    Some form of error has occurred.
                 </xsl:when>
                 <xsl:otherwise>
-                    Start job <xsl:value-of select="$id"/> success.
+                    The job is in an unknown state.
                 </xsl:otherwise>
             </xsl:choose>
         </xsl:if>
-        <!-- END start -->
+        <!-- END phase -->
 
         <!-- BEGIN again -->
         <xsl:if test="name(/*)='again'">
@@ -76,20 +92,20 @@
         <xsl:if test="name(/*)='jobslist'">
             <h2>List of jobs user <xsl:value-of select="/jobslist/user"/></h2>
             <table>
-            <tr><td><b>ID</b></td><td colspan="4"><b>State</b></td></tr>
+            <tr><td><b>ID</b></td><td colspan="4"><b>Phase</b></td></tr>
 
             <xsl:for-each select="jobslist/job">
                 <xsl:variable name="id" select="./id"/>
-                <xsl:variable name="state" select="./state"/>
+                <xsl:variable name="phase" select="./phase"/>
 
                 <tr>
                 <td><xsl:value-of select="$id"/></td>
-                <td><xsl:value-of select="$state"/></td>
+                <td><xsl:value-of select="$phase"/></td>
 
                 <td>
                 <xsl:choose>
-                    <xsl:when test="$state='success'">
-                        <form action="/jobs/{$id}/result-id" method="get">
+                    <xsl:when test="not($phase='EXECUTING')">
+                        <form action="/jobs/{$id}/results" method="get">
                         <input type="submit" value="show result"/>
                         </form>
                     </xsl:when>

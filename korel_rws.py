@@ -52,15 +52,13 @@ class RootServer:
         elif (self.action is not None):
             if (self.action == "phase"):
                 return jobs.phase(self.username, self.id)
-            elif (self.action == "results"):
-                return jobs.results(self.username)
             elif (self.action == "remove"):
                 return jobs.remove(self.username, self.id)
             elif (self.action == "again"):
                 return jobs.again(self.username, self.id)
-            elif (self.action == "result-id"):
+            elif (self.action == "results"):
                 if (self.file is None):
-                    return jobs.result_id(self.username, self.id)
+                    return jobs.results(self.username, self.id)
                 else:
                     return jobs.download(self.username, self.id, self.file)
             elif (self.action == "lifetime"):

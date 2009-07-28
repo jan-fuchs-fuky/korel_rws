@@ -17,6 +17,26 @@
 <center><table class="main"><tr><td>
 ]]></begin>
 
+<begin_refresh><![CDATA[
+<html lang="en">
+<head>
+<meta http-equiv="Content-language" content="en">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Korel RESTful Web Service</title>
+<link href="/css/default.css" rel="stylesheet" type="text/css">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Cache-Control" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+<meta http-equiv="Refresh" content="1">
+<meta name="description" content="Korel RESTful Web Service">
+<meta name="keywords" content="korel,fortran,petr,hadrava,rest,restful,web,service,python,ondrejov">
+<meta name="robots" content="index">
+</head>
+<body>
+
+<center><table class="main"><tr><td>
+]]></begin_refresh>
+
 <header><![CDATA[
 
 <h1>Korel RESTful Web Service</h1>

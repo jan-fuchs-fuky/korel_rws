@@ -3,6 +3,7 @@
 import os
 import time
 import signal
+import cherrypy
 
 from cherrypy.lib.static import serve_file
 from StringIO import StringIO
@@ -55,18 +56,20 @@ def start_korel(job_dir):
 
 def start(username, korel_dat, korel_par):
     if (korel_dat.filename == "") or (korel_par.filename == ""):
-        result = "<start><id>-1</id></start>"
+        result = "<body><![CDATA["
+        result += "<h2>Start new job</h2>"
+        result += "Failure. Must upload files korel.dat and korel.par."
+        result += "]]></body>"
         return template.xml2html(StringIO(result))
 
     id, job_dir = make_id_jobdir(username)
 
-    result = "<start><id>%i</id></start>" % id
     save_upload_file(korel_dat, "%s/korel.dat" % job_dir)
     save_upload_file(korel_par, "%s/korel.par" % job_dir)
 
     start_korel(job_dir)
 
-    return template.xml2html(StringIO(result))
+    raise cherrypy.HTTPRedirect(["/jobs/%i/phase" % id], 303)
 
 def again(username, id):
     job_dir = get_job_dir(username, id)
@@ -92,7 +95,6 @@ def again(username, id):
 
 def againstart(username, id, korel_par):
     job_dir = get_job_dir(username, id)
-    result = "<start><id>%s</id></start>" % id
 
     file = open("%s/korel.par" % job_dir, "w")
     file.write(korel_par)
@@ -100,7 +102,7 @@ def againstart(username, id, korel_par):
 
     start_korel(job_dir)
 
-    return template.xml2html(StringIO(result))
+    raise cherrypy.HTTPRedirect(["/jobs/%s/phase" % id], 303)
 
 def cancel(username, id):
     job_dir = get_job_dir(username, id)
@@ -163,25 +165,17 @@ def list(username):
         if (dir[0] == "."):
             continue
 
-        returncode = "%s/%s/returncode.txt" % (root, dir)
-        if (os.path.isfile(returncode)):
-            state = "success"
-        else:
-            state = "running"
+        phase_value = get_pahase("%s/%s" % (root, dir))
 
         result += "<job>\n"
         result += "<id>%s</id>\n" % dir
-        result += "<state>%s</state>\n" % state
+        result += "<phase>%s</phase>\n" % phase_value
         result += "</job>\n"
 
     result += "</jobslist>\n"
     return template.xml2html(StringIO(result))
 
-def results(username):
-    return "Results"
-
-def result_id(username, id):
-    job_dir = get_job_dir(username, id)
+def get_pahase(job_dir):
     returncode = "%s/returncode.txt" % job_dir
 
     if (os.path.isfile(returncode)):
@@ -190,18 +184,22 @@ def result_id(username, id):
         file.close()
 
         if (rc == 0):
-            phase = "finished"
+            return "COMPLETED"
         else:
-            phase = "failure"
+            return "ERROR"
     else:
-        phase = "working"
+        return "EXECUTING"
+
+def results(username, id):
+    job_dir = get_job_dir(username, id)
+    phase_value = get_pahase(job_dir)
 
     result = "<result>\n"
     result += "<user>%s</user>\n" % username
     result += "<id>%s</id>\n" % id
-    result += "<phase>%s</phase>\n" % phase
+    result += "<phase>%s</phase>\n" % phase_value
 
-    if (phase != "working"):
+    if (phase_value != "EXECUTING"):
         root, dirs, files = os.walk(job_dir).next()
         for file in files:
             # skip hidden file
@@ -225,5 +223,15 @@ def download(username, id, file):
 
 def phase(username, id):
     job_dir = get_job_dir(username, id)
+    phase_value = get_pahase(job_dir)
 
-    return "Result-ID %s" % id
+    if (phase_value != "EXECUTING"):
+        raise cherrypy.HTTPRedirect(["/jobs/%s/results" % id], 303)
+
+    result = "<phase>\n"
+    result += "<user>%s</user>\n" % username
+    result += "<id>%s</id>\n" % id
+    result += "<phase>%s</phase>\n" % phase_value
+    result += "</phase>\n"
+
+    return template.xml2html(StringIO(result))
