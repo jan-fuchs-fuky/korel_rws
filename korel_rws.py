@@ -4,14 +4,43 @@
 """ Korel RESTful Web Services """
 
 import os
+import tempfile
 import cherrypy
+import random
+import Image
+import ImageDraw
+import ImageFont
 
 from lxml import etree
 from cherrypy.lib import httpauth
 from cherrypy.lib.static import serve_file
+from StringIO import StringIO
 
 import jobs
 import template
+
+font = ImageFont.load("./share/fonts/ter-u24n_unicode.pil")
+
+def make_mathproblem():
+    png_path = tempfile.mktemp(".png", "mathproblem_", dir="./var/tmp")
+
+    img = Image.new("RGB", (130, 45), "White")
+    
+    x = random.randint(0, 9)
+    operation_chr = ["+", "-", "*"][random.randint(0, 2)]
+    y = random.randint(0, 9)
+    result = eval("%i %s %i" % (x, operation_chr, y))
+
+    drawing = ImageDraw.ImageDraw(img, "RGB")
+    drawing.text((0, 0), "(%i %s %i) = " % (x, operation_chr, y), fill=0, font=font)
+    
+    img.save(png_path)
+
+    result_fo = open("%s.solution" % png_path, "w")
+    result_fo.write("%i\n" % result)
+    result_fo.close()
+
+    return os.path.basename(png_path)
 
 class RootServer:
     @cherrypy.expose
@@ -19,8 +48,44 @@ class RootServer:
         return template.xml2html("./xml/index.xml")
 
     @cherrypy.expose
-    def user(self):
-        return "user"
+    def user(self, action=None, **params):
+        method = cherrypy.request.method
+
+        if ((method == "POST") and (action == "register")):
+            solution_fo = open("./var/tmp/%s.solution" % params["mathproblem_png"], "r")
+            solution = solution_fo.read().strip()
+            solution_fo.close()
+
+            if (params["mathproblem_solution"] == solution):
+                return "OK"
+            else:
+                variable = ""
+                for key in params.keys():
+                    if (key not in ["password", "retype_password", "mathproblem_solution"]):
+                        variable += "%s=%s&" % (key, params[key])
+
+                raise cherrypy.HTTPRedirect(["/user/register?%s" % variable], 303)
+        elif ((method == "GET") and (action == "register")):
+            mathproblem_png = make_mathproblem()
+
+            result  = "<register_user>"
+            result += "<mathproblem_png>%s</mathproblem_png>" % mathproblem_png
+
+            if (params != {}):
+                for key in params:
+                    result += "<%s>%s</%s>" % (key, params[key], key)
+
+            result += "</register_user>"
+
+            return template.xml2html(StringIO(result))
+
+    @cherrypy.expose
+    def mathproblem(self, file):
+        if (file[-4:] != ".png"):
+            raise cherrypy.HTTPError(400, "Bad Request")
+
+        file_path = os.path.abspath("./var/tmp/%s" % file)
+        return serve_file(file_path)
 
     @cherrypy.expose
     def css(self, file):

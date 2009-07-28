@@ -140,6 +140,55 @@
         </xsl:if>
         <!-- END jobslist -->
 
+        <!-- BEGIN register_user -->
+        <xsl:if test="name(/*)='register_user'">
+            <h2>Register user</h2>
+            <form action="/user/register" method="post" enctype="multipart/form-data">
+                <table>
+                <tr>
+                    <td>First Name:</td>
+                    <td><input type="text" name="first_name" value="{/register_user/first_name}"/></td>
+                </tr>
+                <tr>
+                    <td>Surname:</td>
+                    <td><input type="text" name="surname" value="{/register_user/surname}"/></td>
+                </tr>
+                <tr>
+                    <td>Organization:</td>
+                    <td><input type="text" name="organization" value="{/register_user/organization}"/></td>
+                </tr>
+                <tr>
+                    <td>Login:</td>
+                    <td><input type="text" name="login" value="{/register_user/login}"/></td>
+                </tr>
+                <tr>
+                    <td>Password:</td>
+                    <td><input type="password" name="password"/></td>
+                </tr>
+                <tr>
+                    <td><nobr>Re-type Password:</nobr></td>
+                    <td><input type="password" name="retype_password"/></td>
+                </tr>
+                <tr>
+                    <td>E-mail:</td>
+                    <td><input type="text" name="email" value="{/register_user/email}"/></td>
+                </tr>
+                <tr>
+                    <td><img src="/mathproblem/{/register_user/mathproblem_png}"/>
+                        <input type="hidden" name="mathproblem_png" value="{/register_user/mathproblem_png}"/></td>
+                    <td><input type="text" name="mathproblem_solution"/></td>
+                    <td>This question is for testing whether you are a human visitor and to
+                        prevent automated spam submissions. Solve this simple math problem
+                        and enter the result. E.g. for 1+3, enter 4.</td>
+                </tr>
+                <tr>
+                    <td colspan="2"><input type="submit" value="Register"/></td>
+                </tr>
+                </table>
+            </form>
+        </xsl:if>
+        <!-- END register_user -->
+
         <!-- BEGIN body -->
         <xsl:if test="name(/*)='body'">
             <xsl:value-of select="/body" disable-output-escaping="yes"/>
