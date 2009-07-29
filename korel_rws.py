@@ -6,7 +6,9 @@
 # TODO: vyuzivat modul logger
 
 import os
+import re
 import tempfile
+import subprocess
 import cherrypy
 import urllib
 import random
@@ -26,11 +28,41 @@ import template
 
 font = ImageFont.load("./share/fonts/ter-u24n_unicode.pil")
 parser = etree.XMLParser(remove_blank_text=True)
-user_lock = "./var/run/user.lock"
-users_xml = "./etc/users.xml"
+
+patterns = {}
+patterns.update({"login": re.compile("^[a-zA-Z][a-zA-Z._]*$")})
+
+USERS_PATH = "./etc/users"
+TMP_PATH = "./var/tmp"
+VAR_RUN_PATH = "./var/run"
+EXPIRED_MATHPROBLEM = 600
+MATHPROBLEMS_ON_ONEIP = 100
+
+def rm_expired_mathproblem():
+    ip_dict = {}
+    for file in os.listdir(TMP_PATH):
+        file_path = "%s/%s" % (TMP_PATH, file)
+        if ((os.path.isfile(file_path)) and (file[:12] == "mathproblem_")):
+            ip = file[12:file[12:].find("_")+12]
+
+            if (not ip_dict.has_key(ip)):
+                ip_dict.update({ip: []})
+
+            ip_dict[ip].append(file_path)
+
+            file_mtime = os.stat(file_path).st_mtime
+            if ((time.time() - file_mtime) >= EXPIRED_MATHPROBLEM):
+                os.remove(file_path)
+
+    for key in ip_dict.keys():
+        if (len(ip_dict[key]) > MATHPROBLEMS_ON_ONEIP):
+            for file_path in ip_dict[key]:
+                subprocess.call(["rm", file_path])
 
 def make_mathproblem():
-    png_path = tempfile.mktemp(".png", "mathproblem_", dir="./var/tmp")
+    rm_expired_mathproblem()
+
+    png_path = tempfile.mktemp(".png", "mathproblem_%s_" % cherrypy.request.remote.ip, dir=TMP_PATH)
 
     img = Image.new("RGB", (130, 45), "White")
     
@@ -50,7 +82,7 @@ def make_mathproblem():
 
     return os.path.basename(png_path)
 
-def korel_lock(lock):
+def korel_lock(lock, timeout=1000):
     i = 0
     while (1):
         try:
@@ -61,53 +93,51 @@ def korel_lock(lock):
         except Exception, e:
             i += 1
 
-            if (i <= 60):
+            if (i <= timeout):
                 # waiting 50ms
                 time.sleep(0.05)
                 continue
             else:
                 # TODO: zapsat do logu a poslat mail
-                break
+                raise Exception("Create lock file failure")
 
 def korel_unlock(lock):
     os.remove(lock)
 
-# TODO: dokoncit
 def register_user(params):
-    # LOCK
-    korel_lock(user_lock)
+    user_filename = "%s/%s.xml" % (USERS_PATH, params["login"])
+    lock = "%s/user_%s.lock" % (VAR_RUN_PATH, params["login"])
+    locked = False
+
     try:
+        try:
+            # LOCK
+            korel_lock(lock, 0)
+            locked = True
+            user_fd = os.open(user_filename, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0644)
+        except:
+            return "Please enter other login. Login '%s' exists." % params["login"]
+
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(params["password"], salt)
 
-        tree = etree.parse(users_xml, parser)
-        users_elt = tree.xpath('/users')[0]
-        user_elt = etree.SubElement(users_elt, "user")
+        user_xml  = "<?xml version='1.0' encoding='UTF-8'?>\n"
+        user_xml += "<user allow='true'>\n"
+        user_xml += "    <first_name>%s</first_name>\n" % params["first_name"]
+        user_xml += "    <surname>%s</surname>\n" % params["surname"]
+        user_xml += "    <organization>%s</organization>\n" % params["organization"]
+        user_xml += "    <email>%s</email>\n" % params["email"]
+        user_xml += "    <hashed_password>%s</hashed_password>\n" % hashed_password
+        user_xml += "</user>\n"
 
-        first_name_elt = etree.SubElement(user_elt, "first_name")
-        first_name_elt.text = params["first_name"]
-
-        surname_elt = etree.SubElement(user_elt, "surname")
-        surname_elt.text = params["surname"]
-
-        organization_elt = etree.SubElement(user_elt, "organization")
-        organization_elt.text = params["organization"]
-
-        login_elt = etree.SubElement(user_elt, "login")
-        login_elt.text = params["login"]
-
-        hashed_password_elt = etree.SubElement(user_elt, "hashed_password")
-        hashed_password_elt.text = hashed_password
-
-        email_elt = etree.SubElement(user_elt, "email")
-        email_elt.text = params["email"]
-
-        users_fo = open(users_xml, "w")
-        users_fo.write(etree.tostring(tree.getroot(), encoding="UTF-8", xml_declaration=True, pretty_print=True))
-        users_fo.close()
+        os.write(user_fd, user_xml)
+        os.close(user_fd)
     finally:
-        korel_unlock(user_lock)
-    # UNLOCK
+        if (locked):
+            korel_unlock(lock)
+            # UNLOCK
+
+    return ""
 
 class RootServer:
     @cherrypy.expose
@@ -119,19 +149,43 @@ class RootServer:
         method = cherrypy.request.method
 
         if ((method == "POST") and (action == "register")):
-            solution_fo = open("./var/tmp/%s.solution" % params["mathproblem_png"], "r")
-            solution = solution_fo.read().strip()
-            solution_fo.close()
+            # defence against mathproblem_png == "../../any_file" atack
+            mathproblem_png = os.path.basename(params["mathproblem_png"])
+            if (len(mathproblem_png) != len(params["mathproblem_png"])):
+                raise cherrypy.HTTPError(400, "Bad Request")
+
+            # defence against mathproblem_png != "mathproblem_*" atack
+            if (params["mathproblem_png"][:12] != "mathproblem_"):
+                raise cherrypy.HTTPError(400, "Bad Request")
+
+            mathproblem_png = "%s/%s" % (TMP_PATH, params["mathproblem_png"])
+            mathproblem_solution = "%s/%s.solution" % (TMP_PATH, params["mathproblem_png"])
 
             errmsg = ""
-            if (params["mathproblem_solution"] != solution):
-                errmsg = "Bad solution math problem."
-            elif (params["password"] != params["retype_password"]):
-                errmsg = "Bad re-type password."
-            elif ("" in params.values()):
-                errmsg = "All values is required."
+            if (os.path.isfile(mathproblem_solution)):
+                solution_fo = open(mathproblem_solution, "r")
+                solution = solution_fo.read().strip()
+                solution_fo.close()
+
+                subprocess.call(["rm", mathproblem_png])
+                subprocess.call(["rm", mathproblem_solution])
+
+                if (params["mathproblem_solution"] != solution):
+                    errmsg = "Bad solution math problem."
+                elif (params["password"] != params["retype_password"]):
+                    errmsg = "Bad re-type password."
+                elif ("" in params.values()):
+                    errmsg = "All values is required."
+                elif (len(params["password"]) < 6):
+                    errmsg = "Password must have min. 6 characters."
+                elif (len(params["login"]) < 3):
+                    errmsg = "Login must have min. 3 characters."
+                elif (not patterns["login"].findall(params["login"])):
+                    errmsg = "Login '%s' is not valid." % params["login"]
+                else:
+                    errmsg = register_user(params)
             else:
-                register_user(params)
+                errmsg = "Math problem expired. Solve new math problem."
 
             if (errmsg != ""):
                 for key in params.keys():
@@ -140,6 +194,13 @@ class RootServer:
 
                 params.update({"errmsg": errmsg})
                 raise cherrypy.HTTPRedirect(["/user/register?%s" % urllib.urlencode(params)], 303)
+
+            result = "<body><![CDATA["
+            result += "<h2>Register user</h2>"
+            result += "Please confirm registration on your e-mail address."
+            result += "]]></body>"
+
+            return template.xml2html(StringIO(result))
         elif ((method == "GET") and (action == "register")):
             mathproblem_png = make_mathproblem()
 
@@ -159,7 +220,7 @@ class RootServer:
         if (file[-4:] != ".png"):
             raise cherrypy.HTTPError(400, "Bad Request")
 
-        file_path = os.path.abspath("./var/tmp/%s" % file)
+        file_path = os.path.abspath("%s/%s" % (TMP_PATH, file))
         return serve_file(file_path)
 
     @cherrypy.expose
@@ -238,8 +299,32 @@ class RootServer:
 
         self.username = auth['username'] 
         self.password = auth['password'] 
+        user_xml = "%s/%s.xml" % (USERS_PATH, self.username)
 
-        if ((self.username == "admin") and (self.password == "heslo")):
+        if (os.path.isfile(user_xml)):
+            lock = "%s/user_%s.lock" % (VAR_RUN_PATH, self.username)
+            # LOCK
+            korel_lock(lock)
+            try:
+                user_elts = etree.parse(user_xml, parser).xpath('/user')
+            finally:
+                korel_unlock(lock)
+                # UNLOCK
+
+            for user_elt in user_elts:
+                if ((not user_elt.attrib.has_key("allow")) or (user_elt.attrib["allow"] != "true")):
+                    return False
+
+                for element in user_elt.getchildren():
+                    if (element.tag == "hashed_password"):
+                        hashed_password = element.text
+                        break
+
+            salt = hashed_password[:hashed_password.rfind("$")+23]
+
+            if (bcrypt.hashpw(self.password, salt) != hashed_password):
+                return False
+
             try:
                 home = "%s/%s" % (jobs.JOBS_PATH, self.username)
                 if (not os.path.isdir(home)):

@@ -165,10 +165,13 @@
                 <tr>
                     <td>Login:</td>
                     <td><input type="text" name="login" value="{/register_user/login}"/></td>
+                    <td>Min. 3 characters. One character must be alpha.
+                        Valid characters are alpha and dot and underscore.</td>
                 </tr>
                 <tr>
                     <td>Password:</td>
                     <td><input type="password" name="password"/></td>
+                    <td>Min. 6 characters.</td>
                 </tr>
                 <tr>
                     <td><nobr>Re-type Password:</nobr></td>
