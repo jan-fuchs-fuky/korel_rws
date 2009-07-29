@@ -5,9 +5,8 @@
 
 __version__ = "0.8"
 
-# TODO: vyuzivat modul logger
-
 import os
+import sys
 import re
 import uuid
 import tempfile
@@ -19,6 +18,7 @@ import bcrypt
 import time
 import smtplib
 import email
+import logging
 import Image
 import ImageDraw
 import ImageFont
@@ -53,6 +53,8 @@ MAIL_USER_AGENT = "KorelRWS/%s" % __version__
 USERS_PATH = "./etc/users"
 TMP_PATH = "./var/tmp"
 VAR_RUN_PATH = "./var/run"
+VAR_LOG_PATH = "./var/log"
+KOREL_RWS_PID = "./var/run/korel_rws.pid"
 EXPIRED_MATHPROBLEM = 600
 MATHPROBLEMS_ON_ONEIP = 100
 
@@ -427,6 +429,55 @@ class RootServer:
         else: 
             return False 
 
+#
+#    In CherryPy 3.1, cherrypy.engine can do all of the above via the
+#    Daemonizer plugin: 
+#
+#        from cherrypy.restsrv.plugins import Daemonizer, PIDFile 
+#        Daemonizer(cherrypy.engine).subscribe()
+#
+#    ...and manage pid files via: 
+#
+#        PIDFile(cherrypy.engine, filename).subscribe()
+#
+def daemonize():
+    pid = os.fork()
+    if (pid < 0):
+        sys.exit(1)
+    elif (pid > 0):
+        # exit the parent process
+        sys.exit(0)
+
+    os.setsid()
+    os.umask(0)
+
+    pid = os.fork()
+    if (pid < 0):
+        sys.exit(1)
+    elif (pid > 0):
+        # exit the parent process
+        sys.exit(0)
+    
+    os.close(sys.stdin.fileno())
+    os.close(sys.stdout.fileno())
+    os.close(sys.stderr.fileno())
+
+def create_pid():
+    if (os.path.isfile(KOREL_RWS_PID)):
+        pid_fo = open(KOREL_RWS_PID, "r")
+        old_pid = pid_fo.readline().strip()
+        pid_fo.close()
+
+        if (subprocess.call(["ps", "--pid", old_pid, "-o", "pid="]) != 0):
+            os.remove(KOREL_RWS_PID)
+
+    try:
+        fd = os.open(KOREL_RWS_PID, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0644)
+        os.write(fd, "%i\n" % os.getpid())
+        os.close(fd)
+    except:
+        sys.exit(1)
+
 def main():
     config = {
         'global': {
@@ -438,5 +489,19 @@ def main():
  
     cherrypy.quickstart(RootServer(), '/', config=config)
 
+#
+#   Note that the internal CherryPy engine by default attempts to register signal
+#   handlers for SIGTERM and SIGHUP.
+#
 if __name__ == '__main__':
+    daemonize()
+    create_pid()
+
+    cherrypy.log.screen = False
+    cherrypy.log.access_file = os.path.abspath("%s/access.log" % VAR_LOG_PATH)
+    cherrypy.log.error_file = os.path.abspath("%s/error.log" % VAR_LOG_PATH)
+
     main()
+
+    if (os.path.isfile(KOREL_RWS_PID)):
+        os.remove(KOREL_RWS_PID)

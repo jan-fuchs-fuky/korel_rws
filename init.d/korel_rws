@@ -1,0 +1,49 @@
+#! /bin/sh                                         
+
+set -e
+
+. /lib/lsb/init-functions
+
+if [[ ! -d "$KOREL_RWS_DIR" ]]; then
+    KOREL_RWS_DIR=/opt/korel_rws
+fi
+
+if [[ "$USER" == "root" ]]; then
+    KOREL_RWS_USER="korel_rws"
+else
+    KOREL_RWS_USER="$USER"
+fi
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+DAEMON=${KOREL_RWS_DIR}/korel_rws
+PIDFILE=${KOREL_RWS_DIR}/var/run/korel_rws.pid
+
+# Arguments to atd
+#
+ARGS=""
+
+test -x $DAEMON || exit 0
+
+case "$1" in
+    start)
+        log_action_begin_msg "Starting korel_rws daemon"
+        start-stop-daemon --start --quiet --pidfile "$PIDFILE" --chuid "$KOREL_RWS_USER" --exec "$DAEMON" -- $ARGS
+        log_action_end_msg $?
+        ;;
+    stop)
+        log_action_begin_msg "Stopping korel_rws daemon"
+        start-stop-daemon --stop --quiet --pidfile "$PIDFILE"
+        log_action_end_msg $?
+        ;;
+    restart|force-reload)
+        "$0" stop
+        sleep 2
+        "$0" start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|force-reload}"
+        exit 1
+        ;;
+esac
+
+exit 0
