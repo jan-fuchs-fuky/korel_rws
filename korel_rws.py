@@ -3,10 +3,13 @@
 
 """ Korel RESTful Web Services """
 
+__version__ = "0.8"
+
 # TODO: vyuzivat modul logger
 
 import os
 import re
+import uuid
 import tempfile
 import subprocess
 import cherrypy
@@ -14,6 +17,8 @@ import urllib
 import random
 import bcrypt
 import time
+import smtplib
+import email
 import Image
 import ImageDraw
 import ImageFont
@@ -22,6 +27,7 @@ from lxml import etree
 from cherrypy.lib import httpauth
 from cherrypy.lib.static import serve_file
 from StringIO import StringIO
+from email.MIMEText import MIMEText
 
 import jobs
 import template
@@ -32,11 +38,40 @@ parser = etree.XMLParser(remove_blank_text=True)
 patterns = {}
 patterns.update({"login": re.compile("^[a-zA-Z][a-zA-Z._]*$")})
 
+SMTP_SERVER = {
+    "ip": "mail.fuky.org",
+    "port": 25,
+    "user": "test@fuky.org",
+    "password": "1heslicko!",
+}
+
+MAIL_CONTENT_TYPE = "plain"
+MAIL_CHARSET = "utf-8"
+MAIL_FROM = "korel@sunstel.asu.cas.cz"
+MAIL_USER_AGENT = "KorelRWS/%s" % __version__
+
 USERS_PATH = "./etc/users"
 TMP_PATH = "./var/tmp"
 VAR_RUN_PATH = "./var/run"
 EXPIRED_MATHPROBLEM = 600
 MATHPROBLEMS_ON_ONEIP = 100
+
+def send_mail(to, subject, body):
+    mime_text = MIMEText(body.encode(MAIL_CHARSET), MAIL_CONTENT_TYPE, MAIL_CHARSET)
+
+    mime_text["Date"] = time.strftime("%a, %d %b %Y %H:%M:%S -0000", time.gmtime())
+    mime_text["From"] = MAIL_FROM
+    mime_text["To"] = to
+    mime_text["Subject"] = subject
+    mime_text["User-Agent"] = MAIL_USER_AGENT
+    
+    s = smtplib.SMTP(SMTP_SERVER["ip"], SMTP_SERVER["port"])
+    
+    #s.set_debuglevel(1)
+    s.starttls()
+    s.login(SMTP_SERVER["user"], SMTP_SERVER["password"])
+    s.sendmail(MAIL_FROM, to, mime_text.as_string())
+    s.quit()
 
 def rm_expired_mathproblem():
     ip_dict = {}
@@ -82,6 +117,44 @@ def make_mathproblem():
 
     return os.path.basename(png_path)
 
+def make_confirmation(login):
+    confirmation = uuid.uuid4()
+
+    fo = open("%s/confirmation_%s" % (TMP_PATH, confirmation), "w")
+    fo.write("%s\n" % login)
+    fo.close()
+
+    return confirmation
+
+def action_confirmation(confirmation):
+    confirmation_file = "%s/confirmation_%s" % (TMP_PATH, confirmation)
+
+    if (os.path.isfile(confirmation_file)):
+        fo = open(confirmation_file, "r")
+        login = fo.read().strip()
+        fo.close()
+
+        user_filename = "%s/%s.xml" % (USERS_PATH, login)
+
+        tree = etree.parse(user_filename, parser)
+        user_elt = tree.xpath("/user")[0]
+        user_elt.attrib["allow"] = "true"
+
+        fo = open(user_filename, "w")
+        fo.write(etree.tostring(tree.getroot(), encoding="UTF-8", xml_declaration=True, pretty_print=True))
+        fo.close()
+
+        os.remove(confirmation_file)
+        
+        result  = "<body><![CDATA["
+        result += "<h2>Register user</h2>"
+        result += "Welcome <b>%s</b>, registration is success." % login
+        result += "]]></body>"
+
+        return template.xml2html(StringIO(result))
+    else:
+        raise cherrypy.HTTPError(400, "Bad Request")
+
 def korel_lock(lock, timeout=1000):
     i = 0
     while (1):
@@ -122,7 +195,7 @@ def register_user(params):
         hashed_password = bcrypt.hashpw(params["password"], salt)
 
         user_xml  = "<?xml version='1.0' encoding='UTF-8'?>\n"
-        user_xml += "<user allow='true'>\n"
+        user_xml += "<user allow='false'>\n"
         user_xml += "    <first_name>%s</first_name>\n" % params["first_name"]
         user_xml += "    <surname>%s</surname>\n" % params["surname"]
         user_xml += "    <organization>%s</organization>\n" % params["organization"]
@@ -145,8 +218,10 @@ class RootServer:
         return template.xml2html("./xml/index.xml")
 
     @cherrypy.expose
-    def user(self, action=None, **params):
+    def user(self, *vpath, **params):
         method = cherrypy.request.method
+
+        action = vpath[0]
 
         if ((method == "POST") and (action == "register")):
             # defence against mathproblem_png == "../../any_file" atack
@@ -195,7 +270,20 @@ class RootServer:
                 params.update({"errmsg": errmsg})
                 raise cherrypy.HTTPRedirect(["/user/register?%s" % urllib.urlencode(params)], 303)
 
-            result = "<body><![CDATA["
+            confirmation = make_confirmation(params["login"])
+
+            body  = "Please confirm you registration on Korel RESTful Web Services:\n\n"
+            body += "https://127.0.0.1:8000/user/confirm/%s\n\n" % confirmation
+            body += "First name: %s\n" % params["first_name"]
+            body += "Surname: %s\n" % params["surname"]
+            body += "Organization: %s\n" % params["organization"]
+            body += "Login: %s\n" % params["login"]
+            body += "Password: %s\n" % params["password"]
+            body += "E-mail: %s\n" % params["email"]
+
+            send_mail("fuky@fuky.org", "Korel RESTful Web Service: Register user", body)
+
+            result  = "<body><![CDATA["
             result += "<h2>Register user</h2>"
             result += "Please confirm registration on your e-mail address."
             result += "]]></body>"
@@ -214,6 +302,10 @@ class RootServer:
             result += "</register_user>"
 
             return template.xml2html(StringIO(result))
+        elif ((method == "GET") and (action == "confirm")):
+            return action_confirmation(vpath[1])
+        else:
+            raise cherrypy.HTTPError(400, "Bad Request")
 
     @cherrypy.expose
     def mathproblem(self, file):
