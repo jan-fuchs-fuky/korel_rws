@@ -24,6 +24,7 @@ import ImageDraw
 import ImageFont
 
 from lxml import etree
+from cherrypy import _cperror
 from cherrypy.lib import httpauth
 from cherrypy.lib.static import serve_file
 from StringIO import StringIO
@@ -59,7 +60,7 @@ EXPIRED_MATHPROBLEM = 600
 MATHPROBLEMS_ON_ONEIP = 100
 
 def send_mail(to, subject, body):
-    mime_text = MIMEText(body.encode(MAIL_CHARSET), MAIL_CONTENT_TYPE, MAIL_CHARSET)
+    mime_text = MIMEText(body.decode("utf-8").encode(MAIL_CHARSET), MAIL_CONTENT_TYPE, MAIL_CHARSET)
 
     mime_text["Date"] = time.strftime("%a, %d %b %Y %H:%M:%S -0000", time.gmtime())
     mime_text["From"] = MAIL_FROM
@@ -259,10 +260,28 @@ class RootServer:
                     errmsg = "Login must have min. 3 characters."
                 elif (not patterns["login"].findall(params["login"])):
                     errmsg = "Login '%s' is not valid." % params["login"]
-                else:
-                    errmsg = register_user(params)
             else:
                 errmsg = "Math problem expired. Solve new math problem."
+
+            if (not errmsg):
+                confirmation = make_confirmation(params["login"])
+
+                body  = "Please confirm you registration on Korel RESTful Web Services:\n\n"
+                body += "https://127.0.0.1:8000/user/confirm/%s\n\n" % confirmation
+                body += "First name: %s\n" % params["first_name"]
+                body += "Surname: %s\n" % params["surname"]
+                body += "Organization: %s\n" % params["organization"]
+                body += "Login: %s\n" % params["login"]
+                body += "Password: %s\n" % params["password"]
+                body += "E-mail: %s\n" % params["email"]
+
+                send_mail("fuky@fuky.org", "Korel RESTful Web Service: Register user", body)
+                errmsg = register_user(params)
+
+                result  = "<body><![CDATA["
+                result += "<h2>Register user</h2>"
+                result += "Please confirm registration on your e-mail address."
+                result += "]]></body>"
 
             if (errmsg != ""):
                 for key in params.keys():
@@ -271,24 +290,6 @@ class RootServer:
 
                 params.update({"errmsg": errmsg})
                 raise cherrypy.HTTPRedirect(["/user/register?%s" % urllib.urlencode(params)], 303)
-
-            confirmation = make_confirmation(params["login"])
-
-            body  = "Please confirm you registration on Korel RESTful Web Services:\n\n"
-            body += "https://127.0.0.1:8000/user/confirm/%s\n\n" % confirmation
-            body += "First name: %s\n" % params["first_name"]
-            body += "Surname: %s\n" % params["surname"]
-            body += "Organization: %s\n" % params["organization"]
-            body += "Login: %s\n" % params["login"]
-            body += "Password: %s\n" % params["password"]
-            body += "E-mail: %s\n" % params["email"]
-
-            send_mail("fuky@fuky.org", "Korel RESTful Web Service: Register user", body)
-
-            result  = "<body><![CDATA["
-            result += "<h2>Register user</h2>"
-            result += "Please confirm registration on your e-mail address."
-            result += "]]></body>"
 
             return template.xml2html(StringIO(result))
         elif ((method == "GET") and (action == "register")):
@@ -478,12 +479,25 @@ def create_pid():
     except:
         sys.exit(1)
 
+def handle_error():
+    cherrypy.response.status = 500
+
+    result  = "<body><![CDATA["
+    result += "<h2>Error</h2>"
+    result += "Sorry, an error occurred."
+    result += "]]></body>"
+
+    cherrypy.response.body = [ template.xml2html(StringIO(result)) ]
+    send_mail("fuky@fuky.org", "Error in Korel RESTful Web Service", _cperror.format_exc())
+
 def main():
     config = {
         'global': {
             'server.socket_port': 8000,
             'server.ssl_certificate': 'cert.pem',
-            'server.ssl_private_key': 'key.pem'
+            'server.ssl_private_key': 'key.pem',
+            'request.error_response': handle_error,
+            'error_page.404': "error/404.html"
         }
     } 
  
@@ -494,7 +508,7 @@ def main():
 #   handlers for SIGTERM and SIGHUP.
 #
 if __name__ == '__main__':
-    daemonize()
+    #daemonize()
     create_pid()
 
     cherrypy.log.screen = False
