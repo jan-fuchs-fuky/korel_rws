@@ -1,5 +1,11 @@
 """ Jobs """
 
+#
+# Author: Jan Fuchs <fuky@sunstel.asu.cas.cz>
+# $Date$
+# $Rev$
+#
+
 import os
 import time
 import signal
@@ -184,10 +190,13 @@ def list(username):
     return template.xml2html(StringIO(result))
 
 def get_pahase(job_dir):
-    returncode = "%s/returncode.txt" % job_dir
+    returncode_txt = "%s/returncode.txt" % job_dir
 
-    if (os.path.isfile(returncode)):
-        file = open(returncode, "r")
+    if (os.path.isfile("%s/traceback" % job_dir)):
+        return "ERROR"
+
+    if (os.path.isfile(returncode_txt)):
+        file = open(returncode_txt, "r")
         rc = int(file.read().strip())
         file.close()
 
@@ -210,11 +219,31 @@ def results(username, id):
     if (phase_value != "EXECUTING"):
         root, dirs, files = os.walk(job_dir).next()
         for file in files:
-            # skip hidden file
-            if (file[0] == "."):
+            if (file.find("component") == 0):
+                result += "<component>%s</component>\n" % file
+
+            # skip hidden and other file
+            if ((file[0] == ".") or (file in ["korel.pid", "returncode.txt"]) or (file[-4:] == ".png")):
                 continue
 
-            result += "<link>%s</link>\n" % file
+            stat = os.stat("%s/%s" % (root, file))
+
+            if (stat.st_size == 0):
+                continue
+            elif (stat.st_size < 1024):
+                size = "%iB" % stat.st_size
+            elif (stat.st_size < 1024*1024):
+                size = "%.1fKB" % (stat.st_size / 1024.0)
+            else:
+                size = "%.1fMB" % (stat.st_size / (1024.0*1024.0))
+
+            # TODO: posilat traceback mailem
+            if (file in ["stderr.txt", "traceback"]):
+                type = "error"
+            else:
+                type = ""
+
+            result += '<link size="%s" type="%s">%s</link>\n' % (size, type, file)
 
     result += "</result>\n"
 
@@ -223,6 +252,9 @@ def results(username, id):
 def download(username, id, file):
     job_dir = get_job_dir(username, id)
     file_path = os.path.abspath("%s/%s" % (job_dir, file))
+
+    # DBG
+    call("echo %s >> /tmp/log" % file_path, shell=True)
 
     if (os.path.isfile(file_path)):
         return serve_file(file_path)

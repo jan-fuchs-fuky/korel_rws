@@ -45,11 +45,31 @@
             </form></p>
 
             <xsl:if test="not($phase='EXECUTING')">
+                <p>
                 <xsl:for-each select="result/link">
                     <xsl:variable name="link" select="."/>
-                    <a href="/jobs/{$id}/results/{$link}">
-                    <xsl:value-of select="$link"/>
-                    </a><br/><xsl:text>&#xa;</xsl:text>
+
+                    <xsl:choose>
+                        <xsl:when test="not(@type='normal')">
+                            <a href="/jobs/{$id}/results/{$link}" class="{@type}">
+                                <xsl:value-of select="$link"/>
+                            </a>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <a href="/jobs/{$id}/results/{$link}">
+                                <xsl:value-of select="$link"/>
+                            </a>
+                        </xsl:otherwise>
+                    </xsl:choose>
+
+                    &#160;<xsl:value-of select="@size"/><br/>
+                </xsl:for-each>
+                </p>
+
+                <p><img src="/jobs/{$id}/results/phg.png"/></p>
+
+                <xsl:for-each select="result/component">
+                    <p><img src="/jobs/{$id}/results/{.}"/></p>
                 </xsl:for-each>
             </xsl:if>
         </xsl:if>

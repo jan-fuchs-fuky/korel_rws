@@ -69,6 +69,34 @@ a:hover {
     font-weight: bold;
 }
 
+a.error:link {
+    color: #FF0000;
+    text-decoration: none;
+    background: none;
+    font-weight: bold;
+}
+
+a.error:visited {
+    color: #FF0000;
+    text-decoration: none;
+    background: none;
+    font-weight: bold;
+}
+
+a.error:active {
+    color: #FF0000;
+    text-decoration: none;
+    background: none;
+    font-weight: bold;
+}
+
+a.error:hover {
+    color: #660000;
+    text-decoration: underline;
+    background: none;
+    font-weight: bold;
+}
+
 div.errmsg {
     color: #FF0000;
     margin-bottom: 10px;

@@ -3,6 +3,12 @@
 
 """ Korel RESTful Web Services """
 
+#
+# Author: Jan Fuchs <fuky@sunstel.asu.cas.cz>
+# $Date$
+# $Rev$
+#
+
 __version__ = "0.9"
 
 import os
@@ -328,11 +334,12 @@ class RootServer:
 
     @cherrypy.expose
     def jobs(self, id=None, action=None, file=None, korel_dat=None, korel_par=None):
-        self.id = id
-        self.action = action
-        self.file = file
-        self.korel_dat = korel_dat
-        self.korel_par = korel_par
+        params = {}
+        params.update({"id": id})
+        params.update({"action": action})
+        params.update({"file": file})
+        params.update({"korel_dat": korel_dat})
+        params.update({"korel_par": korel_par})
 
         if (self.check_auth()):
             method = cherrypy.request.method
@@ -340,53 +347,53 @@ class RootServer:
                 raise cherrypy.HTTPError(400, "Bad Request")
 
             http_method = getattr(self, method)
-            return (http_method)()
+            return (http_method)(params)
         else:
             cherrypy.response.headers["www-authenticate"] = httpauth.basicAuth("Korel RESTful Web Services") 
             raise cherrypy.HTTPError(401, "You are not authorized to access that resource") 
 
-    def GET(self):
-        if (self.id is None):
+    def GET(self, params):
+        if (params["id"] is None):
             return jobs.list(self.username)
-        elif (self.action is not None):
-            if (self.action == "phase"):
-                return jobs.phase(self.username, self.id)
-            elif (self.action == "remove"):
-                return jobs.remove(self.username, self.id)
-            elif (self.action == "again"):
-                return jobs.again(self.username, self.id)
-            elif (self.action == "results"):
-                if (self.file is None):
-                    return jobs.results(self.username, self.id)
+        elif (params["action"] is not None):
+            if (params["action"] == "phase"):
+                return jobs.phase(self.username, params["id"])
+            elif (params["action"] == "remove"):
+                return jobs.remove(self.username, params["id"])
+            elif (params["action"] == "again"):
+                return jobs.again(self.username, params["id"])
+            elif (params["action"] == "results"):
+                if (params["file"] is None):
+                    return jobs.results(self.username, params["id"])
                 else:
-                    return jobs.download(self.username, self.id, self.file)
-            elif (self.action == "lifetime"):
+                    return jobs.download(self.username, params["id"], params["file"])
+            elif (params["action"] == "lifetime"):
                 raise cherrypy.HTTPError(400, "Bad Request")
-            elif (self.action == "quote"):
+            elif (params["action"] == "quote"):
                 raise cherrypy.HTTPError(400, "Bad Request")
             else:
                 raise cherrypy.HTTPError(400, "Bad Request")
         else:
             raise cherrypy.HTTPError(400, "Bad Request")
 
-    def POST(self):
-        if (self.id is None):
-            if (self.korel_dat is None) or (self.korel_par is None):
+    def POST(self, params):
+        if (params["id"] is None):
+            if (params["korel_dat"] is None) or (params["korel_par"] is None):
                 return template.xml2html("./xml/start_new_job.xml")
 
-            return jobs.start(self.username, self.korel_dat, self.korel_par)
-        elif (self.action == "againstart"):
-            return jobs.againstart(self.username, self.id, self.korel_par)
+            return jobs.start(self.username, params["korel_dat"], params["korel_par"])
+        elif (params["action"] == "againstart"):
+            return jobs.againstart(self.username, params["id"], params["korel_par"])
         else:
-            return jobs.cancel(self.username, self.id)
+            return jobs.cancel(self.username, params["id"])
 
-    def DELETE(self):
-        if (self.id is not None):
+    def DELETE(self, params):
+        if (params["id"] is not None):
             return jobs.cancel(self.username)
         else:
             raise cherrypy.HTTPError(400, "Bad Request")
 
-    def PUT(self):
+    def PUT(self, params):
         raise cherrypy.HTTPError(400, "Bad Request")
 
     def check_auth(self): 

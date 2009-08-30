@@ -1,12 +1,18 @@
 #!/usr/bin/env python2.5
 # -*- coding: utf-8 -*-
 
+#
+# Author: Jan Fuchs <fuky@sunstel.asu.cas.cz>
+# $Date$
+# $Rev$
+#
+
 import os
 import sys
 import time
 import traceback
 
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, call
 
 KOREL_PID = "korel.pid"
 
@@ -24,6 +30,13 @@ def main():
     while (result is None):
         result = korel_pipe.poll()
         time.sleep(1)
+
+    if (os.path.isfile("phg.ps")):
+        call("sed -i '/end/d' phg.ps", shell=True)
+        call("convert phg.ps phg.png", shell=True)
+
+    if (os.path.isfile("korel.res")):
+        call(["%s/plotsp.sh" % os.path.dirname(korel_bin), "korel.res"])
 
     korel_result = open("returncode.txt", "w")
     korel_result.write("%s\n" % result)
