@@ -508,7 +508,7 @@ def main():
 #   handlers for SIGTERM and SIGHUP.
 #
 if __name__ == '__main__':
-    #daemonize()
+    daemonize()
     create_pid()
 
     cherrypy.log.screen = False
