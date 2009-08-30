@@ -3,7 +3,7 @@
 
 """ Korel RESTful Web Services """
 
-__version__ = "0.8.1"
+__version__ = "0.9"
 
 import os
 import sys
@@ -44,13 +44,6 @@ parser = etree.XMLParser(remove_blank_text=True)
 patterns = {}
 patterns.update({"login": re.compile("^[a-zA-Z][a-zA-Z._]*$")})
 
-SMTP_SERVER = {
-    "ip": "mail.fuky.org",
-    "port": 25,
-    "user": "test@fuky.org",
-    "password": "1heslicko!",
-}
-
 MAIL_CONTENT_TYPE = "plain"
 MAIL_CHARSET = "utf-8"
 MAIL_FROM = "korel@sunstel.asu.cas.cz"
@@ -73,11 +66,16 @@ def send_mail(to, subject, body):
     mime_text["Subject"] = subject
     mime_text["User-Agent"] = MAIL_USER_AGENT
     
-    s = smtplib.SMTP(SMTP_SERVER["ip"], SMTP_SERVER["port"])
+    s = smtplib.SMTP(options.smtp_address, options.smtp_port)
     
     #s.set_debuglevel(1)
-    s.starttls()
-    s.login(SMTP_SERVER["user"], SMTP_SERVER["password"])
+
+    if (options.smtp_ssl):
+        s.starttls()
+
+    if (options.smtp_user) and (options.smtp_password):
+        s.login(options.smtp_user, options.smtp_password)
+
     s.sendmail(MAIL_FROM, to, mime_text.as_string())
     s.quit()
 
@@ -500,10 +498,17 @@ def handle_error():
 #   handlers for SIGTERM and SIGHUP.
 #
 def main():
+    global options
+
     parser = OptionParser()
 
     parser.add_option("-p", "--port", dest="port", type="int", default=8000)
     parser.add_option("-d", "--daemonize", dest="daemonize", default=False, action="store_true")
+    parser.add_option("--smtp-ssl", dest="smtp_ssl", default=False, action="store_true")
+    parser.add_option("--smtp-user", dest="smtp_user", default="")
+    parser.add_option("--smtp-password", dest="smtp_password", default="")
+    parser.add_option("--smtp-addresss", dest="smtp_address", default="pleione.asu.cas.cz")
+    parser.add_option("--smtp-port", dest="smtp_port", type="int", default=25)
 
     (options, args) = parser.parse_args()
     #print "options: %s, args: %s" % (options, args)
