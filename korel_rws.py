@@ -23,12 +23,17 @@ import Image
 import ImageDraw
 import ImageFont
 
+from optparse import OptionParser
 from lxml import etree
 from cherrypy import _cperror
 from cherrypy.lib import httpauth
 from cherrypy.lib.static import serve_file
 from StringIO import StringIO
 from email.MIMEText import MIMEText
+
+script_path = os.path.dirname(os.path.realpath(os.path.abspath(sys.argv[0])))
+sys.path.append(os.path.abspath("%s/lib" % script_path))
+os.chdir(script_path)
 
 import jobs
 import template
@@ -275,7 +280,7 @@ class RootServer:
                 body += "Password: %s\n" % params["password"]
                 body += "E-mail: %s\n" % params["email"]
 
-                send_mail("fuky@fuky.org", "Korel RESTful Web Service: Register user", body)
+                send_mail(params["email"], "Korel RESTful Web Service: Register user", body)
                 errmsg = register_user(params)
 
                 result  = "<body><![CDATA["
@@ -490,32 +495,43 @@ def handle_error():
     cherrypy.response.body = [ template.xml2html(StringIO(result)) ]
     send_mail("fuky@fuky.org", "Error in Korel RESTful Web Service", _cperror.format_exc())
 
-def main():
-    config = {
-        'global': {
-            'server.socket_port': 8000,
-            'server.ssl_certificate': 'cert.pem',
-            'server.ssl_private_key': 'key.pem',
-            'request.error_response': handle_error,
-            'error_page.404': "error/404.html"
-        }
-    } 
- 
-    cherrypy.quickstart(RootServer(), '/', config=config)
-
 #
 #   Note that the internal CherryPy engine by default attempts to register signal
 #   handlers for SIGTERM and SIGHUP.
 #
-if __name__ == '__main__':
-    daemonize()
+def main():
+    parser = OptionParser()
+
+    parser.add_option("-p", "--port", dest="port", type="int", default=8000)
+    parser.add_option("-d", "--daemonize", dest="daemonize", default=False, action="store_true")
+
+    (options, args) = parser.parse_args()
+    #print "options: %s, args: %s" % (options, args)
+
+    if (options.daemonize):
+        daemonize()
+
     create_pid()
 
     cherrypy.log.screen = False
     cherrypy.log.access_file = os.path.abspath("%s/access.log" % VAR_LOG_PATH)
     cherrypy.log.error_file = os.path.abspath("%s/error.log" % VAR_LOG_PATH)
 
-    main()
+    config = {
+        'global': {
+            'server.socket_port': options.port,
+            'server.ssl_certificate': 'cert.pem',
+            'server.ssl_private_key': 'key.pem',
+            'request.error_response': handle_error,
+            'error_page.404': "error/404.html",
+            'error_page.401': "error/401.html"
+        }
+    } 
+ 
+    cherrypy.quickstart(RootServer(), '/', config=config)
 
     if (os.path.isfile(KOREL_RWS_PID)):
         os.remove(KOREL_RWS_PID)
+
+if __name__ == '__main__':
+    main()

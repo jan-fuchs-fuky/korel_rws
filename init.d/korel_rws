@@ -20,7 +20,7 @@ PIDFILE=${KOREL_RWS_DIR}/var/run/korel_rws.pid
 
 # Arguments to atd
 #
-ARGS=""
+ARGS="-d"
 
 test -x $DAEMON || exit 0
 
