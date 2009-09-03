@@ -19,13 +19,47 @@ import template
 
 JOBS_PATH = "./jobs"
 
-def save_upload_file(input, output):
+def is_valid_xml_char(char):
+    """ http://www.w3.org/TR/2004/REC-xml-20040204/#charsets """
+
+    value = ord(char)
+
+    if (value == 0x9):
+        return True
+    elif (value == 0xA):
+        return True
+    elif (value == 0xD):
+        return True
+    elif ((value >= 0x20) and (value <= 0xD7FF)):
+        return True
+    elif ((value >= 0xE000) and (value <= 0xFFFD)):
+        return True
+    elif ((value >= 0x10000) and (value <= 0x10FFFF)):
+        return True
+
+    return False
+
+def remove_invalid_xml_char(buffer):
+    chars = []
+    for char in buffer:
+        if (is_valid_xml_char(char)):
+            chars.append(char)
+
+    return "%s\n" % "".join(chars).strip()
+
+def save_upload_file(input, output, xml=False):
     file = open(output, "w")
+
     while (1):
         data = input.file.read(1024*8)
         if (not data):
             break
-        file.write(data)
+
+        if (xml):
+            file.write(remove_invalid_xml_char(data))
+        else:
+            file.write(data)
+
     file.close()
 
 def get_job_dir(username, id):
@@ -71,33 +105,42 @@ def start(username, korel_dat, korel_par):
     id, job_dir = make_id_jobdir(username)
 
     save_upload_file(korel_dat, "%s/korel.dat" % job_dir)
-    save_upload_file(korel_par, "%s/korel.par" % job_dir)
+    save_upload_file(korel_par, "%s/korel.par" % job_dir, xml=True)
 
     start_korel(job_dir)
 
     raise cherrypy.HTTPRedirect(["/jobs/%i/phase" % id], 303)
 
 def again(username, id):
-    job_dir = get_job_dir(username, id)
-    korel_dat = "%s/korel.dat" % job_dir
-    korel_par = "%s/korel.par" % job_dir
+    try:
+        job_dir = get_job_dir(username, id)
+        korel_dat = "%s/korel.dat" % job_dir
+        korel_par = "%s/korel.par" % job_dir
 
-    new_id, new_job_dir = make_id_jobdir(username)
+        new_id, new_job_dir = make_id_jobdir(username)
 
-    if (call(["cp", korel_dat, new_job_dir]) != 0):
-        raise Exception("Copy korel.dat failure")
+        if (call(["cp", korel_dat, new_job_dir]) != 0):
+            raise Exception("Copy korel.dat failure")
 
-    file = open(korel_par, "r")
-    korel_par_buffer = file.read()
-    file.close()
+        file = open(korel_par, "r")
+        korel_par_buffer = file.read()
+        file.close()
 
-    result = "<again>"
-    result += "<id>%s</id>" % id
-    result += "<new_id>%s</new_id>" % new_id
-    result += "<korel_par><![CDATA[%s]]></korel_par>" % korel_par_buffer
-    result += "</again>"
+        result = []
+        result.append("<again>")
+        result.append("<id>%s</id>" % id)
+        result.append("<new_id>%s</new_id>" % new_id)
 
-    return template.xml2html(StringIO(result))
+        result.append("<korel_par><![CDATA[")
+        result.append(remove_invalid_xml_char(korel_par_buffer))
+        result.append("]]></korel_par>")
+
+        result.append("</again>")
+
+        return template.xml2html(StringIO("".join(result)))
+    except Exception, e:
+        call(["rm", "-rf", new_job_dir])
+        raise Exception(e)
 
 def againstart(username, id, korel_par):
     job_dir = get_job_dir(username, id)
