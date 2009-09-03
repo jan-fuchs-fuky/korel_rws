@@ -26,10 +26,18 @@ def main():
     os.write(fd, "%i\n" % korel_pipe.pid)
     os.close(fd)
 
+    fo = open("time_begin", "w")
+    fo.write("%i\n" % time.time())
+    fo.close()
+
     result = None
     while (result is None):
         result = korel_pipe.poll()
         time.sleep(1)
+
+    fo = open("time_end", "w")
+    fo.write("%i\n" % time.time())
+    fo.close()
 
     if (os.path.isfile("phg.ps")):
         call("sed -i '/end/d' phg.ps", shell=True)

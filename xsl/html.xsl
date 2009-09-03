@@ -106,8 +106,25 @@
             <h2>Again job <xsl:value-of select="/again/id"/> as job <xsl:value-of select="$new_id"/></h2>
 
             <form action="/jobs/{$new_id}/againstart" method="post">
-            <p><textarea name="korel_par" cols="80" rows="15"><xsl:value-of select="/again/korel_par"/></textarea></p>
-            <p><input type="submit" value="Start"/></p>
+                <table>
+                <tr>
+                    <td>Project name:</td>
+                    <td><input type="text" name="project" value="{/again/project}"/></td>
+                </tr>
+                <tr>
+                    <td>Comment:</td>
+                    <td><textarea name="comment" cols="60" rows="3"></textarea></td>
+                </tr>
+                <tr>
+                    <td>korel.par:</td>
+                    <td><textarea name="korel_par" cols="80" rows="15">
+                        <xsl:value-of select="/again/korel_par"/>
+                    </textarea></td>
+                </tr>
+                <tr>
+                    <td colspan="2"><input type="submit" value="Start"/></td>
+                </tr>
+                </table>
             </form>
         </xsl:if>
         <!-- END again -->
@@ -116,7 +133,13 @@
         <xsl:if test="name(/*)='jobslist'">
             <h2>List of jobs user <xsl:value-of select="/jobslist/user"/></h2>
             <table>
-            <tr><td><b>ID</b></td><td colspan="4"><b>Phase</b></td></tr>
+                <tr>
+                    <td><b>ID</b></td>
+                    <td><b>Project</b></td>
+                    <td><b>Starting Time</b></td>
+                    <td><b>Running Time</b></td>
+                    <td colspan="4"><b>Phase</b></td>
+                </tr>
 
             <xsl:for-each select="jobslist/job">
                 <xsl:variable name="id" select="./id"/>
@@ -124,6 +147,9 @@
 
                 <tr>
                 <td><xsl:value-of select="$id"/></td>
+                <td><xsl:value-of select="./project"/></td>
+                <td><xsl:value-of select="./time_begin"/></td>
+                <td><xsl:value-of select="./time_run"/></td>
                 <td><xsl:value-of select="$phase"/></td>
 
                 <td>
@@ -153,7 +179,13 @@
                     </form>
                 </td>
 
-                </tr><xsl:text>&#xa;</xsl:text>
+                </tr>
+
+                <tr>
+                    <td colspan="8"><i><b>Comment: </b><xsl:value-of select="./comment"/></i><br/><br/></td>
+                </tr>
+
+                <xsl:text>&#xa;</xsl:text>
             </xsl:for-each>
 
             </table>

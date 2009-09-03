@@ -50,17 +50,40 @@ def remove_invalid_xml_char(buffer):
 def save_upload_file(input, output, xml=False):
     file = open(output, "w")
 
-    while (1):
-        data = input.file.read(1024*8)
-        if (not data):
-            break
+    #while (1):
+    #    data = input.file.read(1024*8)
+    #    if (not data):
+    #        break
 
-        if (xml):
-            file.write(remove_invalid_xml_char(data))
-        else:
-            file.write(data)
+    #    if (xml):
+    #        data = remove_invalid_xml_char(data)
+
+    #    file.write(data)
+
+    if (xml):
+        file.write(remove_invalid_xml_char(input.value))
+    else:
+        file.write(input.value)
 
     file.close()
+
+def save2file(filename, buffer, xml=True):
+    if (xml):
+        buffer = remove_invalid_xml_char(buffer)
+
+    fo = open(filename, "w")
+    fo.write(buffer)
+    fo.close()
+
+def get_file(filename):
+    try:
+        fo = open(filename, "r")
+        buffer = fo.read()
+        fo.close()
+    except:
+        return ""
+
+    return buffer.strip()
 
 def get_job_dir(username, id):
     job_dir = "%s/%s/%s" % (JOBS_PATH, username, id)
@@ -94,8 +117,8 @@ def make_id_jobdir(username):
 def start_korel(job_dir):
     Popen("nohup ./bin/korel.py %s &" % job_dir, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
 
-def start(username, korel_dat, korel_par):
-    if (korel_dat.filename == "") or (korel_par.filename == ""):
+def start(username, params):
+    if (params["korel_dat"].filename == "") or (params["korel_par"].filename == ""):
         result = "<body><![CDATA["
         result += "<h2>Start new job</h2>"
         result += "Failure. Must upload files korel.dat and korel.par."
@@ -104,8 +127,10 @@ def start(username, korel_dat, korel_par):
 
     id, job_dir = make_id_jobdir(username)
 
-    save_upload_file(korel_dat, "%s/korel.dat" % job_dir)
-    save_upload_file(korel_par, "%s/korel.par" % job_dir, xml=True)
+    save_upload_file(params["korel_dat"], "%s/korel.dat" % job_dir)
+    save_upload_file(params["korel_par"], "%s/korel.par" % job_dir, xml=True)
+    save2file("%s/project" % job_dir, params["project"])
+    save2file("%s/comment" % job_dir, params["comment"])
 
     start_korel(job_dir)
 
@@ -116,23 +141,21 @@ def again(username, id):
         job_dir = get_job_dir(username, id)
         korel_dat = "%s/korel.dat" % job_dir
         korel_par = "%s/korel.par" % job_dir
+        project = "%s/project" % job_dir
 
         new_id, new_job_dir = make_id_jobdir(username)
 
         if (call(["cp", korel_dat, new_job_dir]) != 0):
             raise Exception("Copy korel.dat failure")
 
-        file = open(korel_par, "r")
-        korel_par_buffer = file.read()
-        file.close()
-
         result = []
         result.append("<again>")
         result.append("<id>%s</id>" % id)
+        result.append("<project>%s</project>" % get_file(project))
         result.append("<new_id>%s</new_id>" % new_id)
 
         result.append("<korel_par><![CDATA[")
-        result.append(remove_invalid_xml_char(korel_par_buffer))
+        result.append(get_file(korel_par))
         result.append("]]></korel_par>")
 
         result.append("</again>")
@@ -142,16 +165,19 @@ def again(username, id):
         call(["rm", "-rf", new_job_dir])
         raise Exception(e)
 
-def againstart(username, id, korel_par):
-    job_dir = get_job_dir(username, id)
+def againstart(username, params):
+    job_dir = get_job_dir(username, params["id"])
 
     file = open("%s/korel.par" % job_dir, "w")
-    file.write(korel_par)
+    file.write(params["korel_par"])
     file.close()
+
+    save2file("%s/project" % job_dir, params["project"])
+    save2file("%s/comment" % job_dir, params["comment"])
 
     start_korel(job_dir)
 
-    raise cherrypy.HTTPRedirect(["/jobs/%s/phase" % id], 303)
+    raise cherrypy.HTTPRedirect(["/jobs/%s/phase" % params["id"]], 303)
 
 def cancel(username, id):
     job_dir = get_job_dir(username, id)
@@ -204,6 +230,14 @@ def remove(username, id):
 
     return template.xml2html(StringIO(result))
 
+def human_time(seconds):
+    hours = seconds / 3600
+    seconds = seconds % 3600
+    minutes = seconds / 60
+    seconds = seconds % 60
+
+    return "%02i:%02i:%02i" % (hours, minutes, seconds)
+
 def list(username):
     dirs_dict = {}
 
@@ -221,12 +255,32 @@ def list(username):
 
     # sort key dir by value mtime
     for item in sorted(dirs_dict.iteritems(), key=lambda (k,v): (v,k), reverse=True):
-        dir = item[0]
-        phase_value = get_pahase("%s/%s" % (root, dir))
+        id = item[0]
+        job_dir = "%s/%s" % (root, id)
+
+        phase_value = get_pahase("%s" % job_dir)
+        project = get_file("%s/project" % job_dir)
+        comment = get_file("%s/comment" % job_dir)
+        time_begin = get_file("%s/time_begin" % job_dir)
+        time_end = get_file("%s/time_end" % job_dir)
+
+        human_time_begin = ""
+        if (time_begin):
+            time_begin = int(time_begin)
+            human_time_begin = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time_begin))
+
+        human_time_run = ""
+        if (time_end):
+            time_end = int(time_end)
+            human_time_run = human_time(time_end - time_begin)
 
         result += "<job>\n"
-        result += "<id>%s</id>\n" % dir
+        result += "<id>%s</id>\n" % id
         result += "<phase>%s</phase>\n" % phase_value
+        result += "<project>%s</project>\n" % project
+        result += "<comment>%s</comment>\n" % comment
+        result += "<time_begin>%s</time_begin>\n" % human_time_begin
+        result += "<time_run>%s</time_run>\n" % human_time_run
         result += "</job>\n"
 
     result += "</jobslist>\n"
@@ -253,6 +307,7 @@ def get_pahase(job_dir):
 def results(username, id):
     job_dir = get_job_dir(username, id)
     phase_value = get_pahase(job_dir)
+    hidden_files = ["korel.pid", "returncode.txt", "comment", "project", "time_begin", "time_end"]
 
     result = "<result>\n"
     result += "<user>%s</user>\n" % username
@@ -266,7 +321,7 @@ def results(username, id):
                 result += "<component>%s</component>\n" % file
 
             # skip hidden and other file
-            if ((file[0] == ".") or (file in ["korel.pid", "returncode.txt"]) or (file[-4:] == ".png")):
+            if ((file[0] == ".") or (file in hidden_files) or (file[-4:] == ".png")):
                 continue
 
             stat = os.stat("%s/%s" % (root, file))
@@ -295,9 +350,6 @@ def results(username, id):
 def download(username, id, file):
     job_dir = get_job_dir(username, id)
     file_path = os.path.abspath("%s/%s" % (job_dir, file))
-
-    # DBG
-    call("echo %s >> /tmp/log" % file_path, shell=True)
 
     if (os.path.isfile(file_path)):
         return serve_file(file_path)
