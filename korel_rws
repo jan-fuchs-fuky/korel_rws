@@ -9,7 +9,7 @@
 # $Rev$
 #
 
-__version__ = "0.9"
+__version__ = "0.9.1"
 
 import os
 import sys
@@ -22,12 +22,11 @@ import urllib
 import random
 import bcrypt
 import time
-import smtplib
-import email
 import logging
 import Image
 import ImageDraw
 import ImageFont
+import ConfigParser
 
 from optparse import OptionParser
 from lxml import etree
@@ -35,7 +34,6 @@ from cherrypy import _cperror
 from cherrypy.lib import httpauth
 from cherrypy.lib.static import serve_file
 from StringIO import StringIO
-from email.MIMEText import MIMEText
 
 script_path = os.path.dirname(os.path.realpath(os.path.abspath(sys.argv[0])))
 sys.path.append(os.path.abspath("%s/lib" % script_path))
@@ -44,16 +42,13 @@ os.chdir(script_path)
 import jobs
 import template
 
+from mail import send_mail
+
 font = ImageFont.load("./share/fonts/ter-u24n_unicode.pil")
 parser = etree.XMLParser(remove_blank_text=True)
 
 patterns = {}
 patterns.update({"login": re.compile("^[a-zA-Z][a-zA-Z._]*$")})
-
-MAIL_CONTENT_TYPE = "plain"
-MAIL_CHARSET = "utf-8"
-MAIL_FROM = "korel@sunstel.asu.cas.cz"
-MAIL_USER_AGENT = "KorelRWS/%s" % __version__
 
 USERS_PATH = "./etc/users"
 TMP_PATH = "./var/tmp"
@@ -62,28 +57,6 @@ VAR_LOG_PATH = "./var/log"
 KOREL_RWS_PID = "./var/run/korel_rws.pid"
 EXPIRED_MATHPROBLEM = 600
 MATHPROBLEMS_ON_ONEIP = 100
-
-def send_mail(to, subject, body):
-    mime_text = MIMEText(body.decode("utf-8").encode(MAIL_CHARSET), MAIL_CONTENT_TYPE, MAIL_CHARSET)
-
-    mime_text["Date"] = time.strftime("%a, %d %b %Y %H:%M:%S -0000", time.gmtime())
-    mime_text["From"] = MAIL_FROM
-    mime_text["To"] = to
-    mime_text["Subject"] = subject
-    mime_text["User-Agent"] = MAIL_USER_AGENT
-    
-    s = smtplib.SMTP(options.smtp_address, options.smtp_port)
-    
-    #s.set_debuglevel(1)
-
-    if (options.smtp_ssl):
-        s.starttls()
-
-    if (options.smtp_user) and (options.smtp_password):
-        s.login(options.smtp_user, options.smtp_password)
-
-    s.sendmail(MAIL_FROM, to, mime_text.as_string())
-    s.quit()
 
 def rm_expired_mathproblem():
     ip_dict = {}
@@ -284,7 +257,7 @@ class RootServer:
                 body += "Password: %s\n" % params["password"]
                 body += "E-mail: %s\n" % params["email"]
 
-                send_mail(params["email"], "Korel RESTful Web Service: Register user", body)
+                send_mail(params["email"], "Korel RESTful Web Service: Register user", body, options)
                 errmsg = register_user(params)
 
                 result  = "<body><![CDATA["
@@ -359,7 +332,7 @@ class RootServer:
             elif (params["action"] == "remove"):
                 return jobs.remove(self.username, params["id"])
             elif (params["action"] == "again"):
-                return jobs.again(self.username, params["id"])
+                return jobs.again(self.username, self.email, params["id"])
             elif (params["action"] == "results"):
                 if (params.has_key("file")):
                     return jobs.download(self.username, params["id"], params["file"])
@@ -377,7 +350,8 @@ class RootServer:
     def POST(self, params):
         if (not params.has_key("id")):
             if (not params.has_key("korel_dat")) or (not params.has_key("korel_par")):
-                return template.xml2html("./xml/start_new_job.xml")
+                result = "<start_new_job><email>%s</email></start_new_job>" % self.email
+                return template.xml2html(StringIO(result))
             return jobs.start(self.username, params)
         elif (params["action"] == "againstart"):
             return jobs.againstart(self.username, params)
@@ -401,6 +375,7 @@ class RootServer:
 
         self.username = auth['username'] 
         self.password = auth['password'] 
+        self.email = ""
         user_xml = "%s/%s.xml" % (USERS_PATH, self.username)
 
         if (os.path.isfile(user_xml)):
@@ -420,7 +395,8 @@ class RootServer:
                 for element in user_elt.getchildren():
                     if (element.tag == "hashed_password"):
                         hashed_password = element.text
-                        break
+                    elif (element.tag == "email"):
+                        self.email = element.text.strip()
 
             salt = hashed_password[:hashed_password.rfind("$")+23]
 
@@ -495,7 +471,7 @@ def handle_error():
     result += "]]></body>"
 
     cherrypy.response.body = [ template.xml2html(StringIO(result)) ]
-    send_mail("fuky@fuky.org", "Error in Korel RESTful Web Service", _cperror.format_exc())
+    send_mail("fuky@fuky.org", "Error in Korel RESTful Web Service", _cperror.format_exc(), options)
 
 #
 #   Note that the internal CherryPy engine by default attempts to register signal
@@ -525,6 +501,18 @@ def main():
     cherrypy.log.screen = False
     cherrypy.log.access_file = os.path.abspath("%s/access.log" % VAR_LOG_PATH)
     cherrypy.log.error_file = os.path.abspath("%s/error.log" % VAR_LOG_PATH)
+
+    cfg = ConfigParser.RawConfigParser()
+    cfg.add_section("smtp")
+    cfg.set("smtp", "addresss", options.smtp_address)
+    cfg.set("smtp", "port", options.smtp_port)
+    cfg.set("smtp", "user", options.smtp_user)
+    cfg.set("smtp", "password", options.smtp_password)
+    cfg.set("smtp", "ssl", options.smtp_ssl)
+
+    fo_cfg = open("./etc/korel_rws.cfg", "w")
+    cfg.write(fo_cfg)
+    fo_cfg.close()
 
     config = {
         'global': {

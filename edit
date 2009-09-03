@@ -3,5 +3,6 @@
 gvim -p \
 ./korel_rws \
 ./lib/jobs.py \
+./lib/mail.py \
 ./bin/korel.py \
 ./korel_rws

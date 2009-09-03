@@ -132,11 +132,14 @@ def start(username, params):
     save2file("%s/project" % job_dir, params["project"])
     save2file("%s/comment" % job_dir, params["comment"])
 
+    if (params.has_key("mailing")):
+        save2file("%s/mailing" % job_dir, params["email"])
+
     start_korel(job_dir)
 
     raise cherrypy.HTTPRedirect(["/jobs/%i/phase" % id], 303)
 
-def again(username, id):
+def again(username, email, id):
     try:
         job_dir = get_job_dir(username, id)
         korel_dat = "%s/korel.dat" % job_dir
@@ -153,6 +156,7 @@ def again(username, id):
         result.append("<id>%s</id>" % id)
         result.append("<project>%s</project>" % get_file(project))
         result.append("<new_id>%s</new_id>" % new_id)
+        result.append("<email>%s</email>" % email)
 
         result.append("<korel_par><![CDATA[")
         result.append(get_file(korel_par))
@@ -174,6 +178,9 @@ def againstart(username, params):
 
     save2file("%s/project" % job_dir, params["project"])
     save2file("%s/comment" % job_dir, params["comment"])
+
+    if (params.has_key("mailing")):
+        save2file("%s/mailing" % job_dir, params["email"])
 
     start_korel(job_dir)
 
@@ -265,14 +272,16 @@ def list(username):
         time_end = get_file("%s/time_end" % job_dir)
 
         human_time_begin = ""
+        human_time_run = ""
         if (time_begin):
             time_begin = int(time_begin)
             human_time_begin = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time_begin))
 
-        human_time_run = ""
-        if (time_end):
-            time_end = int(time_end)
-            human_time_run = human_time(time_end - time_begin)
+            if (time_end):
+                time_end = int(time_end)
+                human_time_run = human_time(time_end - time_begin)
+            else:
+                human_time_run = human_time(time.time() - time_begin)
 
         result += "<job>\n"
         result += "<id>%s</id>\n" % id
@@ -288,6 +297,7 @@ def list(username):
 
 def get_pahase(job_dir):
     returncode_txt = "%s/returncode.txt" % job_dir
+    time_begin = "%s/time_begin" % job_dir
 
     if (os.path.isfile("%s/traceback" % job_dir)):
         return "ERROR"
@@ -301,8 +311,10 @@ def get_pahase(job_dir):
             return "COMPLETED"
         else:
             return "ERROR"
-    else:
+    elif (os.path.isfile(time_begin)):
         return "EXECUTING"
+    else:
+        return "PREPARING"
 
 def results(username, id):
     job_dir = get_job_dir(username, id)

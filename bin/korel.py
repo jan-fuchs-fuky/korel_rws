@@ -14,6 +14,8 @@ import traceback
 
 from subprocess import Popen, PIPE, call
 
+from mail import send_mail
+
 KOREL_PID = "korel.pid"
 
 def main():
@@ -49,6 +51,18 @@ def main():
     korel_result = open("returncode.txt", "w")
     korel_result.write("%s\n" % result)
     korel_result.close()
+
+    pid = os.path.basename(korel_pwd)
+    result_tgz = "../%s.tgz" % pid
+    call(["tar", "zcf", result_tgz, "../%s" % pid])
+
+    if (os.path.isfile("mailing")):
+        fo = open("mailing", "r")
+        email_to = fo.read(1024).strip()
+        fo.close()
+
+        body = "Result od job %s" % pid
+        send_mail(email_to, "Korel RESTful Web Service: Result od job %s" % pid, body, attachments=[result_tgz])
 
 if __name__ == '__main__':
     argc = len(sys.argv)

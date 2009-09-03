@@ -3,6 +3,5 @@
 gvim -p \
 ./xml/html.xml \
 ./xml/index.xml \
-./xml/start_new_job.xml \
 ./xsl/html.xsl \
 ./css/default.css

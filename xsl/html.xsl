@@ -122,6 +122,13 @@
                     </textarea></td>
                 </tr>
                 <tr>
+                    <td>Send result on e-mail:</td>
+                    <td>
+                        <input type="text" name="email" value="{/again/email}"/>
+                        <input type="checkbox" name="mailing" value="true"/>
+                    </td>
+                </tr>
+                <tr>
                     <td colspan="2"><input type="submit" value="Start"/></td>
                 </tr>
                 </table>
@@ -153,24 +160,28 @@
                 <td><xsl:value-of select="$phase"/></td>
 
                 <td>
-                <xsl:choose>
-                    <xsl:when test="not($phase='EXECUTING')">
-                        <form action="/jobs/{$id}/results" method="get">
-                        <input type="submit" value="show result"/>
-                        </form>
-                    </xsl:when>
-                    <xsl:otherwise>
-                        <form action="/jobs/{$id}" method="post">
-                        <input type="submit" value="cancel job"/>
-                        </form>
-                    </xsl:otherwise>
-                </xsl:choose>
+                <xsl:if test="not($phase='PREPARING')">
+                    <xsl:choose>
+                        <xsl:when test="not($phase='EXECUTING')">
+                            <form action="/jobs/{$id}/results" method="get">
+                            <input type="submit" value="show result"/>
+                            </form>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <form action="/jobs/{$id}" method="post">
+                            <input type="submit" value="cancel job"/>
+                            </form>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:if>
                 </td>
 
                 <td>
+                <xsl:if test="not($phase='PREPARING')">
                     <form action="/jobs/{$id}/again" method="get">
                     <input type="submit" value="run again"/>
                     </form>
+                </xsl:if>
                 </td>
 
                 <td>
@@ -248,6 +259,44 @@
             </form>
         </xsl:if>
         <!-- END register_user -->
+
+        <!-- BEGIN start_new_job -->
+        <xsl:if test="name(/*)='start_new_job'">
+            <body>
+            <h2>Start new job</h2>
+            <form action="/jobs" method="post" enctype="multipart/form-data">
+                <table>
+                <tr>
+                    <td>Project name:</td>
+                    <td><input type="text" name="project"/></td>
+                </tr>
+                <tr>
+                    <td>Comment:</td>
+                    <td><textarea name="comment" cols="60" rows="3"></textarea></td>
+                </tr>
+                <tr>
+                    <td>korel.dat:</td>
+                    <td><input type="file" name="korel_dat"/></td>
+                </tr>
+                <tr>
+                    <td>korel.par:</td>
+                    <td><input type="file" name="korel_par"/></td>
+                </tr>
+                <tr>
+                    <td>Send result on e-mail:</td>
+                    <td>
+                        <input type="text" name="email" value="{/start_new_job/email}"/>
+                        <input type="checkbox" name="mailing" value="true"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2"><input type="submit" value="Start"/></td>
+                </tr>
+                </table>
+            </form>
+            </body>
+        </xsl:if>
+        <!-- END start_new_job -->
 
         <!-- BEGIN body -->
         <xsl:if test="name(/*)='body'">
