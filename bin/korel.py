@@ -14,10 +14,10 @@ import traceback
 
 from subprocess import Popen, PIPE, call
 
-from mail import send_mail
-
 script_path = os.path.dirname(os.path.realpath(os.path.abspath(sys.argv[0])))
 sys.path.append(os.path.abspath("%s/../lib" % script_path))
+
+from mail import send_mail
 
 KOREL_PID = "korel.pid"
 
