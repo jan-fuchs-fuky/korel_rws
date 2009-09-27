@@ -9,7 +9,7 @@
 # $Rev$
 #
 
-__version__ = "0.9.1"
+__version__ = "0.9.2"
 
 import os
 import sys
@@ -482,16 +482,49 @@ def main():
 
     parser = OptionParser()
 
-    parser.add_option("-p", "--port", dest="port", type="int", default=8000)
-    parser.add_option("-d", "--daemonize", dest="daemonize", default=False, action="store_true")
-    parser.add_option("--smtp-ssl", dest="smtp_ssl", default=False, action="store_true")
-    parser.add_option("--smtp-user", dest="smtp_user", default="")
-    parser.add_option("--smtp-password", dest="smtp_password", default="")
-    parser.add_option("--smtp-addresss", dest="smtp_address", default="pleione.asu.cas.cz")
-    parser.add_option("--smtp-port", dest="smtp_port", type="int", default=25)
+    parser.add_option("-p", "--port", dest="port", type="int", default=None)
+    parser.add_option("-a", "--address", dest="address", default=None)
+    parser.add_option("-d", "--daemonize", dest="daemonize", default=None, action="store_true")
+    parser.add_option("-c", "--conf", dest="conf", default="korel_rws.cfg")
+    parser.add_option("--smtp-ssl", dest="smtp_ssl", default=None, action="store_true")
+    parser.add_option("--smtp-user", dest="smtp_user", default=None)
+    parser.add_option("--smtp-password", dest="smtp_password", default=None)
+    parser.add_option("--smtp-addresss", dest="smtp_address", default=None)
+    parser.add_option("--smtp-port", dest="smtp_port", type="int", default=None)
 
     (options, args) = parser.parse_args()
     #print "options: %s, args: %s" % (options, args)
+
+    cfg = ConfigParser.RawConfigParser()
+    cfg.read("%s/etc/%s" % (os.path.dirname(__file__), options.conf))
+
+    if (options.address is None):
+        options.address = cfg.get("server", "address")
+    if (options.port is None):
+        options.port = cfg.getint("server", "port")
+    if (options.daemonize is None):
+        options.daemonize = cfg.getboolean("server", "daemonize")
+    if (options.smtp_address is None):
+        options.smtp_address = cfg.get("smtp", "address")
+    if (options.smtp_port is None):
+        options.smtp_port = cfg.getint("smtp", "port")
+    if (options.smtp_user is None):
+        options.smtp_user = cfg.get("smtp", "user")
+    if (options.smtp_password is None):
+        options.smtp_password = cfg.get("smtp", "password")
+    if (options.smtp_ssl is None):
+        options.smtp_ssl = cfg.getboolean("smtp", "ssl")
+
+    os.putenv("KOREL_SMTP_ADDREESS", options.smtp_address)
+    os.putenv("KOREL_SMTP_PORT", str(options.smtp_port))
+    os.putenv("KOREL_SMTP_USER", options.smtp_user)
+    os.putenv("KOREL_SMTP_PASSWORD", options.smtp_password)
+    os.putenv("KOREL_SMTP_SSL", str(options.smtp_ssl))
+    os.putenv("KOREL_MAX_PROCESS", cfg.get("korel", "max_process"))
+
+    # TODO: dodat aktualizaci count_process
+
+    #print options
 
     if (options.daemonize):
         daemonize()
@@ -502,17 +535,17 @@ def main():
     cherrypy.log.access_file = os.path.abspath("%s/access.log" % VAR_LOG_PATH)
     cherrypy.log.error_file = os.path.abspath("%s/error.log" % VAR_LOG_PATH)
 
-    cfg = ConfigParser.RawConfigParser()
-    cfg.add_section("smtp")
-    cfg.set("smtp", "addresss", options.smtp_address)
-    cfg.set("smtp", "port", options.smtp_port)
-    cfg.set("smtp", "user", options.smtp_user)
-    cfg.set("smtp", "password", options.smtp_password)
-    cfg.set("smtp", "ssl", options.smtp_ssl)
+    #cfg = ConfigParser.RawConfigParser()
+    #cfg.add_section("smtp")
+    #cfg.set("smtp", "addresss", options.smtp_address)
+    #cfg.set("smtp", "port", options.smtp_port)
+    #cfg.set("smtp", "user", options.smtp_user)
+    #cfg.set("smtp", "password", options.smtp_password)
+    #cfg.set("smtp", "ssl", options.smtp_ssl)
 
-    fo_cfg = open("./etc/korel_rws.cfg", "w")
-    cfg.write(fo_cfg)
-    fo_cfg.close()
+    #fo_cfg = open("./etc/korel_rws.cfg", "w")
+    #cfg.write(fo_cfg)
+    #fo_cfg.close()
 
     config = {
         'global': {

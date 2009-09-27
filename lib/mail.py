@@ -6,7 +6,7 @@
 # $Rev$
 #
 
-__version__ = "0.9.1"
+__version__ = "0.9.2"
 
 import os
 import time
@@ -33,16 +33,15 @@ class Options():
 
 def send_mail(to, subject, body, options=None, attachments=None):
     if (not options):
-        cfg = ConfigParser.RawConfigParser()
-        cfg.read("%s/../etc/korel_rws.cfg" % os.path.dirname(__file__))
+        options.smtp_address = os.getenv("KOREL_SMTP_ADDREESS")
+        options.smtp_port = int(os.getenv("KOREL_SMTP_PORT"))
+        options.smtp_user = os.getenv("KOREL_SMTP_USER")
+        options.smtp_password = os.getenv("KOREL_SMTP_PASSWORD")
 
-        options = Options()
-
-        options.smtp_address = cfg.get("smtp", "addresss")
-        options.smtp_port = cfg.getint("smtp", "port")
-        options.smtp_user = cfg.get("smtp", "user")
-        options.smtp_password = cfg.get("smtp", "password")
-        options.smtp_ssl = cfg.getboolean("smtp", "ssl")
+        if (os.getenv("KOREL_SMTP_SSL") == "True"):
+            options.smtp_ssl = True
+        else:
+            options.smtp_ssl = False
 
     m = MIMEMultipart()
     m["Date"] = time.strftime("%a, %d %b %Y %H:%M:%S -0000", time.gmtime())

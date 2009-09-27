@@ -372,7 +372,7 @@ def phase(username, id):
     job_dir = get_job_dir(username, id)
     phase_value = get_pahase(job_dir)
 
-    if (phase_value != "EXECUTING"):
+    if (phase_value not in ["EXECUTING", "PREPARING"]):
         raise cherrypy.HTTPRedirect(["/jobs/%s/results" % id], 303)
 
     result = "<phase>\n"

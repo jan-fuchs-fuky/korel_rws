@@ -92,6 +92,9 @@
                 <xsl:when test="$phase='ERROR'">
                     Some form of error has occurred.
                 </xsl:when>
+                <xsl:when test="$phase='PREPARING'">
+                    Preparing run job.
+                </xsl:when>
                 <xsl:otherwise>
                     The job is in an unknown state.
                 </xsl:otherwise>
