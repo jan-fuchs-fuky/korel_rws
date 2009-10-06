@@ -249,7 +249,7 @@ class RootServer:
                 confirmation = make_confirmation(params["login"])
 
                 body  = "Please confirm you registration on Korel RESTful Web Services:\n\n"
-                body += "https://127.0.0.1:8000/user/confirm/%s\n\n" % confirmation
+                body += "https://stelweb.asu.cas.cz/vo-korel/user/confirm/%s\n\n" % confirmation
                 body += "First name: %s\n" % params["first_name"]
                 body += "Surname: %s\n" % params["surname"]
                 body += "Organization: %s\n" % params["organization"]
