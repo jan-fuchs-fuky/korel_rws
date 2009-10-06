@@ -271,7 +271,7 @@ class RootServer:
                         params.pop(key)
 
                 params.update({"errmsg": errmsg})
-                raise cherrypy.HTTPRedirect(["/user/register?%s" % urllib.urlencode(params)], 303)
+                raise cherrypy.HTTPRedirect(["/vo-korel/user/register?%s" % urllib.urlencode(params)], 303)
 
             return template.xml2html(StringIO(result))
         elif ((method == "GET") and (action == "register")):
