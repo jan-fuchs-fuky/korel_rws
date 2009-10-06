@@ -33,6 +33,7 @@ class Options():
 
 def send_mail(to, subject, body, options=None, attachments=None):
     if (not options):
+        options = Options()
         options.smtp_address = os.getenv("KOREL_SMTP_ADDREESS")
         options.smtp_port = int(os.getenv("KOREL_SMTP_PORT"))
         options.smtp_user = os.getenv("KOREL_SMTP_USER")
