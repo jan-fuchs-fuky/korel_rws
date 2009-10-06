@@ -114,10 +114,11 @@ def make_id_jobdir(username):
 
     return [id, job_dir]
 
-def start_korel(job_dir):
-    Popen("nohup ./bin/korel.py %s &" % job_dir, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+def start_korel(job_dir, environ):
+    Popen("nohup ./bin/korel.py %s &" % job_dir,\
+          shell=True, env=environ, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
 
-def start(username, params):
+def start(username, params, environ):
     if (params["korel_dat"].filename == "") or (params["korel_par"].filename == ""):
         result = "<body><![CDATA["
         result += "<h2>Start new job</h2>"
@@ -135,7 +136,7 @@ def start(username, params):
     if (params.has_key("mailing")):
         save2file("%s/mailing" % job_dir, params["email"])
 
-    start_korel(job_dir)
+    start_korel(job_dir, environ)
 
     raise cherrypy.HTTPRedirect(["/jobs/%i/phase" % id], 303)
 
@@ -169,7 +170,7 @@ def again(username, email, id):
         call(["rm", "-rf", new_job_dir])
         raise Exception(e)
 
-def againstart(username, params):
+def againstart(username, params, environ):
     job_dir = get_job_dir(username, params["id"])
 
     file = open("%s/korel.par" % job_dir, "w")
@@ -182,7 +183,7 @@ def againstart(username, params):
     if (params.has_key("mailing")):
         save2file("%s/mailing" % job_dir, params["email"])
 
-    start_korel(job_dir)
+    start_korel(job_dir, environ)
 
     raise cherrypy.HTTPRedirect(["/jobs/%s/phase" % params["id"]], 303)
 

@@ -47,6 +47,7 @@ from mail import send_mail
 font = ImageFont.load("./share/fonts/ter-u24n_unicode.pil")
 parser = etree.XMLParser(remove_blank_text=True)
 
+environ = {}
 patterns = {}
 patterns.update({"login": re.compile("^[a-zA-Z][a-zA-Z._]*$")})
 
@@ -352,9 +353,9 @@ class RootServer:
             if (not params.has_key("korel_dat")) or (not params.has_key("korel_par")):
                 result = "<start_new_job><email>%s</email></start_new_job>" % self.email
                 return template.xml2html(StringIO(result))
-            return jobs.start(self.username, params)
+            return jobs.start(self.username, params, environ)
         elif (params["action"] == "againstart"):
-            return jobs.againstart(self.username, params)
+            return jobs.againstart(self.username, params, environ)
         else:
             return jobs.cancel(self.username, params["id"])
 
@@ -478,7 +479,7 @@ def handle_error():
 #   handlers for SIGTERM and SIGHUP.
 #
 def main():
-    global options
+    global options, environ
 
     parser = OptionParser()
 
@@ -515,12 +516,12 @@ def main():
     if (options.smtp_ssl is None):
         options.smtp_ssl = cfg.getboolean("smtp", "ssl")
 
-    os.putenv("KOREL_SMTP_ADDREESS", options.smtp_address)
-    os.putenv("KOREL_SMTP_PORT", str(options.smtp_port))
-    os.putenv("KOREL_SMTP_USER", options.smtp_user)
-    os.putenv("KOREL_SMTP_PASSWORD", options.smtp_password)
-    os.putenv("KOREL_SMTP_SSL", str(options.smtp_ssl))
-    os.putenv("KOREL_MAX_PROCESS", cfg.get("korel", "max_process"))
+    environ.update({"KOREL_SMTP_ADDREESS": options.smtp_address})
+    environ.update({"KOREL_SMTP_PORT": str(options.smtp_port)})
+    environ.update({"KOREL_SMTP_USER": options.smtp_user})
+    environ.update({"KOREL_SMTP_PASSWORD": options.smtp_password})
+    environ.update({"KOREL_SMTP_SSL": str(options.smtp_ssl)})
+    environ.update({"KOREL_MAX_PROCESS": cfg.get("korel", "max_process")})
 
     # TODO: dodat aktualizaci count_process
 
