@@ -137,7 +137,7 @@ def start(username, params):
 
     start_korel(job_dir)
 
-    raise cherrypy.HTTPRedirect(["/vo-korel/jobs/%i/phase" % id], 303)
+    raise cherrypy.HTTPRedirect(["/jobs/%i/phase" % id], 303)
 
 def again(username, email, id):
     try:
@@ -184,7 +184,7 @@ def againstart(username, params):
 
     start_korel(job_dir)
 
-    raise cherrypy.HTTPRedirect(["/vo-korel/jobs/%s/phase" % params["id"]], 303)
+    raise cherrypy.HTTPRedirect(["/jobs/%s/phase" % params["id"]], 303)
 
 def cancel(username, id):
     job_dir = get_job_dir(username, id)
@@ -373,7 +373,7 @@ def phase(username, id):
     phase_value = get_pahase(job_dir)
 
     if (phase_value not in ["EXECUTING", "PREPARING"]):
-        raise cherrypy.HTTPRedirect(["/vo-korel/jobs/%s/results" % id], 303)
+        raise cherrypy.HTTPRedirect(["/jobs/%s/results" % id], 303)
 
     result = "<phase>\n"
     result += "<user>%s</user>\n" % username
