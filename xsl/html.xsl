@@ -40,7 +40,7 @@
             <xsl:text> </xsl:text><xsl:value-of select="$phase"/>.
             </p>
 
-            <p><form action="/vo-korel/jobs/{$id}/again" method="get">
+            <p><form action="{$service_url}/jobs/{$id}/again" method="get">
             <input type="submit" value="run again"/>
             </form></p>
 
@@ -51,12 +51,12 @@
 
                     <xsl:choose>
                         <xsl:when test="not(@type='normal')">
-                            <a href="/vo-korel/jobs/{$id}/results/{$link}" class="{@type}">
+                            <a href="{$service_url}/jobs/{$id}/results/{$link}" class="{@type}">
                                 <xsl:value-of select="$link"/>
                             </a>
                         </xsl:when>
                         <xsl:otherwise>
-                            <a href="/vo-korel/jobs/{$id}/results/{$link}">
+                            <a href="{$service_url}/jobs/{$id}/results/{$link}">
                                 <xsl:value-of select="$link"/>
                             </a>
                         </xsl:otherwise>
@@ -66,10 +66,10 @@
                 </xsl:for-each>
                 </p>
 
-                <p><img src="/vo-korel/jobs/{$id}/results/phg.png"/></p>
+                <p><img src="{$service_url}/jobs/{$id}/results/phg.png"/></p>
 
                 <xsl:for-each select="result/component">
-                    <p><img src="/vo-korel/jobs/{$id}/results/{.}"/></p>
+                    <p><img src="{$service_url}/jobs/{$id}/results/{.}"/></p>
                 </xsl:for-each>
             </xsl:if>
         </xsl:if>
@@ -108,7 +108,7 @@
 
             <h2>Again job <xsl:value-of select="/again/id"/> as job <xsl:value-of select="$new_id"/></h2>
 
-            <form action="/vo-korel/jobs/{$new_id}/againstart" method="post">
+            <form action="{$service_url}/jobs/{$new_id}/againstart" method="post">
                 <table>
                 <tr>
                     <td>Project name:</td>
@@ -166,12 +166,12 @@
                 <xsl:if test="not($phase='PREPARING')">
                     <xsl:choose>
                         <xsl:when test="not($phase='EXECUTING')">
-                            <form action="/vo-korel/jobs/{$id}/results" method="get">
+                            <form action="{$service_url}/jobs/{$id}/results" method="get">
                             <input type="submit" value="show result"/>
                             </form>
                         </xsl:when>
                         <xsl:otherwise>
-                            <form action="/vo-korel/jobs/{$id}" method="post">
+                            <form action="{$service_url}/jobs/{$id}" method="post">
                             <input type="submit" value="cancel job"/>
                             </form>
                         </xsl:otherwise>
@@ -181,14 +181,14 @@
 
                 <td>
                 <xsl:if test="not($phase='PREPARING')">
-                    <form action="/vo-korel/jobs/{$id}/again" method="get">
+                    <form action="{$service_url}/jobs/{$id}/again" method="get">
                     <input type="submit" value="run again"/>
                     </form>
                 </xsl:if>
                 </td>
 
                 <td>
-                    <form action="/vo-korel/jobs/{$id}/remove" method="get">
+                    <form action="{$service_url}/jobs/{$id}/remove" method="get">
                     <input type="submit" value="remove"/>
                     </form>
                 </td>
@@ -214,7 +214,7 @@
                 <div class="errmsg"><xsl:value-of select="/register_user/errmsg"/></div>
             </xsl:if>
 
-            <form action="/vo-korel/user/register" method="post" enctype="multipart/form-data">
+            <form action="{$service_url}/user/register" method="post" enctype="multipart/form-data">
                 <table>
                 <tr>
                     <td>First Name:</td>
@@ -248,7 +248,7 @@
                     <td><input type="text" name="email" value="{/register_user/email}"/></td>
                 </tr>
                 <tr>
-                    <td><img src="/vo-korel/mathproblem/{/register_user/mathproblem_png}"/>
+                    <td><img src="{$service_url}/mathproblem/{/register_user/mathproblem_png}"/>
                         <input type="hidden" name="mathproblem_png" value="{/register_user/mathproblem_png}"/></td>
                     <td><input type="text" name="mathproblem_solution"/></td>
                     <td>This question is for testing whether you are a human visitor and to
@@ -267,7 +267,7 @@
         <xsl:if test="name(/*)='start_new_job'">
             <body>
             <h2>Start new job</h2>
-            <form action="/vo-korel/jobs" method="post" enctype="multipart/form-data">
+            <form action="{$service_url}/jobs" method="post" enctype="multipart/form-data">
                 <table>
                 <tr>
                     <td>Project name:</td>

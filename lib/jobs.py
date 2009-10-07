@@ -149,8 +149,10 @@ def again(username, email, id):
 
         new_id, new_job_dir = make_id_jobdir(username)
 
-        if (call(["cp", korel_dat, new_job_dir]) != 0):
-            raise Exception("Copy korel.dat failure")
+        #if (call(["cp", korel_dat, new_job_dir]) != 0):
+        #    raise Exception("Copy korel.dat failure")
+
+        os.link(korel_dat, "%s/korel.dat" % new_job_dir)
 
         result = []
         result.append("<again>")

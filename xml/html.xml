@@ -7,7 +7,7 @@
 <meta http-equiv="Content-language" content="en">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>Korel RESTful Web Service</title>
-<link href="/vo-korel/css/default.css" rel="stylesheet" type="text/css">
+<link href="{$service_url}/css/default.css" rel="stylesheet" type="text/css"/>
 <meta name="description" content="Korel RESTful Web Service">
 <meta name="keywords" content="korel,fortran,petr,hadrava,rest,restful,web,service,python,ondrejov">
 <meta name="robots" content="index">
@@ -15,7 +15,8 @@
 <body>
 
 <center><table class="main"><tr><td>
-]]></begin>
+]]>
+</begin>
 
 <begin_refresh><![CDATA[
 <html lang="en">
