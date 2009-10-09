@@ -15,17 +15,70 @@
 
 <xsl:variable name="html" select="document('../xml/html.xml')/html"/>
 
+<!-- http://geekswithblogs.net/Erik/archive/2008/04/01/120915.aspx -->
+<xsl:template name="string-replace-all">
+    <xsl:param name="text"/>
+    <xsl:param name="replace"/>
+    <xsl:param name="by"/>
+    <xsl:choose>
+        <xsl:when test="contains($text, $replace)">
+            <xsl:value-of select="substring-before($text,$replace)" disable-output-escaping="yes"/>
+            <xsl:value-of select="$by" disable-output-escaping="yes"/>
+            <xsl:call-template name="string-replace-all">
+                <xsl:with-param name="text" select="substring-after($text,$replace)"/>
+                <xsl:with-param name="replace" select="$replace"/>
+                <xsl:with-param name="by" select="$by"/>
+            </xsl:call-template>
+        </xsl:when>
+        <xsl:otherwise>
+            <xsl:value-of select="$text" disable-output-escaping="yes"/>
+        </xsl:otherwise>
+    </xsl:choose>
+</xsl:template>
+
+<xsl:template name="html-begin">
+    <xsl:call-template name="string-replace-all">
+        <xsl:with-param name="text" select="$html/begin"/>
+        <xsl:with-param name="replace" select="'{$service_url}'"/>
+        <xsl:with-param name="by" select="$service_url"/>
+    </xsl:call-template>
+</xsl:template>
+
+<xsl:template name="html-begin-refresh">
+    <xsl:call-template name="string-replace-all">
+        <xsl:with-param name="text" select="$html/begin_refresh"/>
+        <xsl:with-param name="replace" select="'{$service_url}'"/>
+        <xsl:with-param name="by" select="$service_url"/>
+    </xsl:call-template>
+</xsl:template>
+
+<xsl:template name="html-header">
+    <xsl:call-template name="string-replace-all">
+        <xsl:with-param name="text" select="$html/header"/>
+        <xsl:with-param name="replace" select="'{$service_url}'"/>
+        <xsl:with-param name="by" select="$service_url"/>
+    </xsl:call-template>
+</xsl:template>
+
+<xsl:template name="html-end">
+    <xsl:call-template name="string-replace-all">
+        <xsl:with-param name="text" select="$html/end"/>
+        <xsl:with-param name="replace" select="'{$service_url}'"/>
+        <xsl:with-param name="by" select="$service_url"/>
+    </xsl:call-template>
+</xsl:template>
+
 <xsl:template match="/">
         <xsl:choose>
             <xsl:when test="name(/*)='phase'">
-                <xsl:value-of select="$html/begin_refresh" disable-output-escaping="yes"/>
+                <xsl:call-template name="html-begin-refresh"/>
             </xsl:when>
             <xsl:otherwise>
-                <xsl:value-of select="$html/begin" disable-output-escaping="yes"/>
+                <xsl:call-template name="html-begin"/>
             </xsl:otherwise>
         </xsl:choose>
 
-        <xsl:value-of select="$html/header" disable-output-escaping="yes"/>
+        <xsl:call-template name="html-header"/>
 
         <!-- BEGIN results -->
         <xsl:if test="name(/*)='result'">
@@ -307,7 +360,7 @@
         </xsl:if>
         <!-- END body -->
 
-        <xsl:value-of select="$html/end" disable-output-escaping="yes"/>
+        <xsl:call-template name="html-end"/>
 </xsl:template>
 
 </xsl:stylesheet>

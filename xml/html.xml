@@ -24,7 +24,7 @@
 <meta http-equiv="Content-language" content="en">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>Korel RESTful Web Service</title>
-<link href="/vo-korel/css/default.css" rel="stylesheet" type="text/css">
+<link href="{$service_url}/css/default.css" rel="stylesheet" type="text/css">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Cache-Control" content="no-cache">
 <meta http-equiv="Expires" content="-1">
@@ -47,9 +47,9 @@
 
     <hr>
     <div class="menu">
-        <a href="/vo-korel">Home</a> -
-        <a href="/vo-korel/help">Help</a> -
-        <a href="/vo-korel/user/register">Create New Account</a>
+        <a href="{$service_url}">Home</a> -
+        <a href="{$service_url}/help">Help</a> -
+        <a href="{$service_url}/user/register">Create New Account</a>
     </div>
     <hr>
 
@@ -58,12 +58,12 @@
 
     <table>
     <tr><td>
-        <form action="/vo-korel/jobs" method="post">
+        <form action="{$service_url}/jobs" method="post">
         <input type="submit" value="Start new job">
         </form>
     </td>
     <td>
-        <form action="/vo-korel/jobs" method="get">
+        <form action="{$service_url}/jobs" method="get">
         <input type="submit" value="List jobs">
         </form>
     </td></tr>

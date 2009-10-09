@@ -490,6 +490,7 @@ def main():
     parser.add_option("--smtp-password", dest="smtp_password", default=None)
     parser.add_option("--smtp-addresss", dest="smtp_address", default=None)
     parser.add_option("--smtp-port", dest="smtp_port", type="int", default=None)
+    parser.add_option("--service-url", dest="service_url", default=None)
 
     (options, args) = parser.parse_args()
     #print "options: %s, args: %s" % (options, args)
@@ -513,6 +514,10 @@ def main():
         options.smtp_password = cfg.get("smtp", "password")
     if (options.smtp_ssl is None):
         options.smtp_ssl = cfg.getboolean("smtp", "ssl")
+    if (options.service_url is None):
+        options.service_url = cfg.get("server", "service-url")
+
+    os.environ.update({"KOREL_SERVICE_URL": options.service_url})
 
     environ.update({"KOREL_SMTP_ADDREESS": options.smtp_address})
     environ.update({"KOREL_SMTP_PORT": str(options.smtp_port)})

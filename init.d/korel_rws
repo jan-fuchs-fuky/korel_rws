@@ -1,6 +1,6 @@
 #! /bin/sh                                         
 
-set -e
+#set -e
 
 . /lib/lsb/init-functions
 
@@ -8,11 +8,13 @@ if [[ ! -d "$KOREL_RWS_DIR" ]]; then
     KOREL_RWS_DIR=/opt/korel_rws
 fi
 
-if [[ "$USER" == "root" ]]; then
-    KOREL_RWS_USER="korel_rws"
-else
-    KOREL_RWS_USER="$USER"
-fi
+#if [[ "$USER" == "root" ]]; then
+#    KOREL_RWS_USER="korel_rws"
+#else
+#    KOREL_RWS_USER="$USER"
+#fi
+
+KOREL_RWS_USER="$USER"
 
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
 DAEMON=${KOREL_RWS_DIR}/korel_rws
