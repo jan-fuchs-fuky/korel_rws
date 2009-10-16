@@ -348,7 +348,7 @@ class RootServer:
 
     def POST(self, params):
         if (not params.has_key("id")):
-            if (not params.has_key("korel_dat")) or (not params.has_key("korel_par")):
+            if (not params.has_key("korel_dat")) or (not params.has_key("korel_archive")):
                 result = "<start_new_job><email>%s</email></start_new_job>" % self.email
                 return template.xml2html(StringIO(result))
             return jobs.start(self.username, params, environ)

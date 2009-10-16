@@ -50,20 +50,15 @@ def remove_invalid_xml_char(buffer):
 def save_upload_file(input, output, xml=False):
     file = open(output, "w")
 
-    #while (1):
-    #    data = input.file.read(1024*8)
-    #    if (not data):
-    #        break
+    while (1):
+        data = input.file.read(1024*8)
+        if (not data):
+            break
 
-    #    if (xml):
-    #        data = remove_invalid_xml_char(data)
+        if (xml):
+            data = remove_invalid_xml_char(data)
 
-    #    file.write(data)
-
-    if (xml):
-        file.write(remove_invalid_xml_char(input.value))
-    else:
-        file.write(input.value)
+        file.write(data)
 
     file.close()
 
@@ -119,7 +114,27 @@ def start_korel(job_dir, environ):
           shell=True, env=environ, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
 
 def start(username, params, environ):
-    if (params["korel_dat"].filename == "") or (params["korel_par"].filename == ""):
+    input_files = False
+    archive = False
+    suffix = ""
+
+    if (params["korel_archive"].filename != ""):
+        suffix = params["korel_archive"].filename
+        suffix = suffix[suffix.find("."):]
+
+        if (suffix in [".zip", ".tgz", ".tbz2", ".tar.gz", ".tar.bz2"]):
+            input_files = True
+            archive = True
+        else:
+            result = "<body><![CDATA["
+            result += "<h2>Start new job</h2>"
+            result += "Failure. '%s' is not supported suffix in korel.(zip|tgz|tbz2)." % suffix
+            result += "]]></body>"
+            return template.xml2html(StringIO(result))
+    elif (params["korel_dat"].filename != "") and (params["korel_par"].filename != ""):
+        input_files = True
+
+    if (not input_files):
         result = "<body><![CDATA["
         result += "<h2>Start new job</h2>"
         result += "Failure. Must upload files korel.dat and korel.par."
@@ -128,8 +143,19 @@ def start(username, params, environ):
 
     id, job_dir = make_id_jobdir(username)
 
-    save_upload_file(params["korel_dat"], "%s/korel.dat" % job_dir)
-    save_upload_file(params["korel_par"], "%s/korel.par" % job_dir, xml=True)
+    if (archive):
+        tmp_dir = os.tmpnam()
+        file_archive = "%s/korel%s" % (tmp_dir, suffix)
+        os.mkdir(tmp_dir)
+        save_upload_file(params["korel_archive"], file_archive)
+
+        if (suffix in [".tgz", ".tar.gz"]):
+            result = call(["tar", "-C", tmp_dir, "zxf", file_archive])
+    else:
+        save_upload_file(params["korel_dat"], "%s/korel.dat" % job_dir)
+        save_upload_file(params["korel_par"], "%s/korel.par" % job_dir, xml=True)
+        save_upload_file(params["korel_par"], "%s/korel.tmp" % job_dir, xml=True)
+
     save2file("%s/project" % job_dir, params["project"])
     save2file("%s/comment" % job_dir, params["comment"])
 

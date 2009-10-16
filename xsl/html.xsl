@@ -331,12 +331,27 @@
                     <td><textarea name="comment" cols="60" rows="3"></textarea></td>
                 </tr>
                 <tr>
+                    <td colspan="2">
+                    Please attach korel.dat, korel.par, korel.tmp or archive korel.(zip|tar.gzip|tar.bzip2).
+                    Archive must contain once a korel directory. The korel
+                    directory can contain korel.dat, korel.par and korel.tmp.
+                    </td>
+                </tr>
+                <tr>
                     <td>korel.dat:</td>
                     <td><input type="file" name="korel_dat"/></td>
                 </tr>
                 <tr>
                     <td>korel.par:</td>
                     <td><input type="file" name="korel_par"/></td>
+                </tr>
+                <tr>
+                    <td>korel.tmp:</td>
+                    <td><input type="file" name="korel_tmp"/></td>
+                </tr>
+                <tr>
+                    <td><nobr>korel.(zip|tgz|tbz2):</nobr></td>
+                    <td><input type="file" name="korel_archive"/></td>
                 </tr>
                 <tr>
                     <td>Send result on e-mail:</td>
