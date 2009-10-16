@@ -48,7 +48,7 @@ def remove_invalid_xml_char(buffer):
     return "%s\n" % "".join(chars).strip()
 
 def save_upload_file(input, output, xml=False):
-    file = open(output, "w")
+    fo = open(output, "w")
 
     while (1):
         data = input.file.read(1024*8)
@@ -58,9 +58,9 @@ def save_upload_file(input, output, xml=False):
         if (xml):
             data = remove_invalid_xml_char(data)
 
-        file.write(data)
+        fo.write(data)
 
-    file.close()
+    fo.close()
 
 def save2file(filename, buffer, xml=True):
     if (xml):
@@ -113,24 +113,51 @@ def start_korel(job_dir, environ):
     Popen("nohup ./bin/korel.py %s &" % job_dir,\
           shell=True, env=environ, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
 
+def call_process(argv):
+    pipe = Popen(argv, stderr=PIPE)
+    retcode = pipe.wait()
+
+    if (retcode == 0):
+        return [True, ""]
+    else:
+        return [False, pipe.stderr.read()]
+
+def process_archive(params, job_dir):
+    suffix = params["korel_archive"].filename
+    suffix = suffix[suffix.find("."):]
+
+    tmp_dir = os.tmpnam()
+    file_archive = "%s/korel%s" % (tmp_dir, suffix)
+    os.mkdir(tmp_dir)
+    save_upload_file(params["korel_archive"], file_archive)
+
+    if (suffix in [".tgz", ".tar.gz"]):
+        result = call_process(["tar", "-C", tmp_dir, "-z", "-x", "-f", file_archive])
+    elif (suffix in [".tbz2", ".tar.bz2"]):
+        result = call_process(["tar", "-C", tmp_dir, "-j", "-x", "-f", file_archive])
+    elif (suffix == ".zip"):
+        result = call_process(["unzip", "-d", tmp_dir, "-x", file_archive])
+    else:
+        raise Exception("Unsupported archive '%s'." % suffix)
+
+    if (not result[0]):
+        raise Exception("Corrupted archive.\n<br/><br/>%s" % result[1].replace("\n", "\n<br/>"))
+
+    if (call(["mv", "%s/korel.dat" % tmp_dir, job_dir]) != 0):
+        raise Exception("File 'korel.dat' not found.")
+    if (call(["mv", "%s/korel.par" % tmp_dir, job_dir]) != 0):
+        raise Exception("File 'korel.par' not found.")
+
+    call(["mv", "%s/korel.tmp", tmp_dir, job_dir])
+    call(["rm", "-rf", tmp_dir])
+
 def start(username, params, environ):
     input_files = False
     archive = False
-    suffix = ""
 
     if (params["korel_archive"].filename != ""):
-        suffix = params["korel_archive"].filename
-        suffix = suffix[suffix.find("."):]
-
-        if (suffix in [".zip", ".tgz", ".tbz2", ".tar.gz", ".tar.bz2"]):
-            input_files = True
-            archive = True
-        else:
-            result = "<body><![CDATA["
-            result += "<h2>Start new job</h2>"
-            result += "Failure. '%s' is not supported suffix in korel.(zip|tgz|tbz2)." % suffix
-            result += "]]></body>"
-            return template.xml2html(StringIO(result))
+        input_files = True
+        archive = True
     elif (params["korel_dat"].filename != "") and (params["korel_par"].filename != ""):
         input_files = True
 
@@ -144,13 +171,14 @@ def start(username, params, environ):
     id, job_dir = make_id_jobdir(username)
 
     if (archive):
-        tmp_dir = os.tmpnam()
-        file_archive = "%s/korel%s" % (tmp_dir, suffix)
-        os.mkdir(tmp_dir)
-        save_upload_file(params["korel_archive"], file_archive)
-
-        if (suffix in [".tgz", ".tar.gz"]):
-            result = call(["tar", "-C", tmp_dir, "zxf", file_archive])
+        try:
+            process_archive(params, job_dir)
+        except Exception, e:
+            result = "<body><![CDATA["
+            result += "<h2>Start new job</h2>"
+            result += "Failure. Error when processing '%s'. %s" % (params["korel_archive"].filename, e)
+            result += "]]></body>"
+            return template.xml2html(StringIO(result))
     else:
         save_upload_file(params["korel_dat"], "%s/korel.dat" % job_dir)
         save_upload_file(params["korel_par"], "%s/korel.par" % job_dir, xml=True)
