@@ -147,7 +147,7 @@ def process_archive(params, job_dir, tmp_dir):
     if (call(["mv", "%s/korel/korel.par" % tmp_dir, job_dir]) != 0):
         raise Exception("File 'korel.par' not found.")
 
-    call(["mv", "%s/korel.tmp", tmp_dir, job_dir])
+    call(["mv", "%s/korel/korel.tmp" % tmp_dir, job_dir])
     call(["rm", "-rf", tmp_dir])
 
 def start(username, params, environ):
@@ -183,7 +183,7 @@ def start(username, params, environ):
     else:
         save_upload_file(params["korel_dat"], "%s/korel.dat" % job_dir)
         save_upload_file(params["korel_par"], "%s/korel.par" % job_dir, xml=True)
-        save_upload_file(params["korel_par"], "%s/korel.tmp" % job_dir, xml=True)
+        save_upload_file(params["korel_tmp"], "%s/korel.tmp" % job_dir)
 
     save2file("%s/project" % job_dir, params["project"])
     save2file("%s/comment" % job_dir, params["comment"])

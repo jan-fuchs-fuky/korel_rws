@@ -95,12 +95,13 @@ def main():
     fo.write("%i\n" % time.time())
     fo.close()
 
-    if (os.path.isfile("phg.ps")):
-        call("sed -i '/end/d' phg.ps", shell=True)
-        call("convert phg.ps phg.png", shell=True)
+    if (result == "0"):
+        if (os.path.isfile("phg.ps")):
+            call("sed -i '/end/d' phg.ps", shell=True)
+            call("convert phg.ps phg.png", shell=True)
 
-    if (os.path.isfile("korel.res")):
-        call(["%s/plotsp.sh" % os.path.dirname(korel_bin), "korel.res"])
+        if (os.path.isfile("korel.res")):
+            call(["%s/plotsp.sh" % os.path.dirname(korel_bin), "korel.res"])
 
     korel_result = open("returncode.txt", "w")
     korel_result.write("%s\n" % result)

@@ -352,7 +352,7 @@ class RootServer:
                 result = "<start_new_job><email>%s</email></start_new_job>" % self.email
                 return template.xml2html(StringIO(result))
             return jobs.start(self.username, params, environ)
-        elif (params["action"] == "againstart"):
+        elif (params.has_key("action")) and (params["action"] == "againstart"):
             return jobs.againstart(self.username, params, environ)
         else:
             return jobs.cancel(self.username, params["id"])
