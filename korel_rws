@@ -553,6 +553,7 @@ def main():
 
     config = {
         'global': {
+            'server.socket_host': options.address,
             'server.socket_port': options.port,
             'server.ssl_certificate': 'cert.pem',
             'server.ssl_private_key': 'key.pem',
