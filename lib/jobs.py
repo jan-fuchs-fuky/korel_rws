@@ -122,11 +122,10 @@ def call_process(argv):
     else:
         return [False, pipe.stderr.read()]
 
-def process_archive(params, job_dir):
+def process_archive(params, job_dir, tmp_dir):
     suffix = params["korel_archive"].filename
     suffix = suffix[suffix.find("."):]
 
-    tmp_dir = os.tmpnam()
     file_archive = "%s/korel%s" % (tmp_dir, suffix)
     os.mkdir(tmp_dir)
     save_upload_file(params["korel_archive"], file_archive)
@@ -143,9 +142,9 @@ def process_archive(params, job_dir):
     if (not result[0]):
         raise Exception("Corrupted archive.\n<br/><br/>%s" % result[1].replace("\n", "\n<br/>"))
 
-    if (call(["mv", "%s/korel.dat" % tmp_dir, job_dir]) != 0):
+    if (call(["mv", "%s/korel/korel.dat" % tmp_dir, job_dir]) != 0):
         raise Exception("File 'korel.dat' not found.")
-    if (call(["mv", "%s/korel.par" % tmp_dir, job_dir]) != 0):
+    if (call(["mv", "%s/korel/korel.par" % tmp_dir, job_dir]) != 0):
         raise Exception("File 'korel.par' not found.")
 
     call(["mv", "%s/korel.tmp", tmp_dir, job_dir])
@@ -172,12 +171,14 @@ def start(username, params, environ):
 
     if (archive):
         try:
-            process_archive(params, job_dir)
+            tmp_dir = os.tmpnam()
+            process_archive(params, job_dir, tmp_dir)
         except Exception, e:
             result = "<body><![CDATA["
             result += "<h2>Start new job</h2>"
             result += "Failure. Error when processing '%s'. %s" % (params["korel_archive"].filename, e)
             result += "]]></body>"
+            call(["rm", "-rf", job_dir, tmp_dir])
             return template.xml2html(StringIO(result))
     else:
         save_upload_file(params["korel_dat"], "%s/korel.dat" % job_dir)

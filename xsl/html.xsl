@@ -161,7 +161,7 @@
 
             <h2>Again job <xsl:value-of select="/again/id"/> as job <xsl:value-of select="$new_id"/></h2>
 
-            <form action="{$service_url}/jobs/{$new_id}/againstart" method="post">
+            <form action="{$service_url}/jobs/{$new_id}/againstart" method="POST">
                 <table>
                 <tr>
                     <td>Project name:</td>
@@ -224,7 +224,7 @@
                             </form>
                         </xsl:when>
                         <xsl:otherwise>
-                            <form action="{$service_url}/jobs/{$id}" method="post">
+                            <form action="{$service_url}/jobs/{$id}" method="POST">
                             <input type="submit" value="cancel job"/>
                             </form>
                         </xsl:otherwise>
@@ -267,7 +267,7 @@
                 <div class="errmsg"><xsl:value-of select="/register_user/errmsg"/></div>
             </xsl:if>
 
-            <form action="{$service_url}/user/register" method="post" enctype="multipart/form-data">
+            <form action="{$service_url}/user/register" method="POST" enctype="multipart/form-data">
                 <table>
                 <tr>
                     <td>First Name:</td>
@@ -320,7 +320,7 @@
         <xsl:if test="name(/*)='start_new_job'">
             <body>
             <h2>Start new job</h2>
-            <form action="{$service_url}/jobs" method="post" enctype="multipart/form-data">
+            <form action="{$service_url}/jobs" method="POST" enctype="multipart/form-data">
                 <table>
                 <tr>
                     <td>Project name:</td>
@@ -332,7 +332,7 @@
                 </tr>
                 <tr>
                     <td colspan="2">
-                    Please attach korel.dat, korel.par, korel.tmp or archive korel.(zip|tar.gzip|tar.bzip2).
+                    Please attach korel.dat, korel.par, korel.tmp or archive korel.(zip|tar.gz|tar.bz2).
                     Archive must contain once a korel directory. The korel
                     directory can contain korel.dat, korel.par and korel.tmp.
                     </td>
