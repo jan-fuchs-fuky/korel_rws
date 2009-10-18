@@ -325,7 +325,7 @@ class RootServer:
     def GET(self, params):
         if (not params.has_key("id")):
             return jobs.list(self.username)
-        elif (params["action"] is not None):
+        elif (params.has_key("action")):
             if (params["action"] == "phase"):
                 return jobs.phase(self.username, params["id"])
             elif (params["action"] == "remove"):
@@ -358,8 +358,8 @@ class RootServer:
             return jobs.cancel(self.username, params["id"])
 
     def DELETE(self, params):
-        if (params["id"] is not None):
-            return jobs.cancel(self.username)
+        if (params.has_key("id")):
+            return jobs.cancel(self.username, params["id"])
         else:
             raise cherrypy.HTTPError(400, "Bad Request")
 
