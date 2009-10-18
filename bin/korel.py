@@ -95,7 +95,7 @@ def main():
     fo.write("%i\n" % time.time())
     fo.close()
 
-    if (result == "0"):
+    if (result == 0):
         if (os.path.isfile("phg.ps")):
             call("sed -i '/end/d' phg.ps", shell=True)
             call("convert phg.ps phg.png", shell=True)
