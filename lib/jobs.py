@@ -377,7 +377,7 @@ def get_pahase(job_dir):
 def results(username, id):
     job_dir = get_job_dir(username, id)
     phase_value = get_pahase(job_dir)
-    hidden_files = ["korel.pid", "returncode.txt", "comment", "project", "time_begin", "time_end"]
+    hidden_files = ["korel.pid", "returncode.txt", "comment", "project", "time_begin", "time_end", "grant"]
 
     result = "<result>\n"
     result += "<user>%s</user>\n" % username

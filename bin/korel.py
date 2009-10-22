@@ -11,7 +11,7 @@ import os
 import sys
 import time
 import traceback
-
+import tempfile
 from subprocess import Popen, PIPE, call
 
 script_path = os.path.dirname(os.path.realpath(os.path.abspath(sys.argv[0])))
@@ -19,58 +19,28 @@ sys.path.append(os.path.abspath("%s/../lib" % script_path))
 
 from mail import send_mail
 
-LOCK_FILE = "../../lock"
-COUNT_PROCESS_FILE = "../../count_process"
+KOREL_QUEUE_PATH = "../../../var/queue"
 KOREL_PID = "korel.pid"
 
-def create_lock(filename):
-    while (1):
-        try:
-            fd = os.open(filename, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0644)
-            break
-        except:
-            time.sleep(0.1)
+def append_to_queue():
+    # /opt/korel_rws/jobs/USER/PID
+    curdir = os.path.abspath(os.curdir)
+    user = os.path.basename(curdir[:curdir.rfind("/")])
+    queue_path = tempfile.mktemp(prefix="%s_" % user, dir=KOREL_QUEUE_PATH)
 
-    os.write(fd, "%i\n" % os.getpid())
-    os.close(fd)
+    fo = open(queue_path, "w")
+    fo.write("%s\n" % curdir)
+    fo.close()
 
 # TODO: omezit cas cekani
 def wait_on_run():
-    max_process = int(os.getenv("KOREL_MAX_PROCESS", default="5"))
-    run = False
-    while (not run):
-        create_lock(LOCK_FILE)
-        try:
-            if (os.path.isfile(COUNT_PROCESS_FILE)):
-                fo = open(COUNT_PROCESS_FILE, "r")
-                count_process = int(fo.readline().strip())
-                fo.close()
-            else:
-                count_process = 0
-
-            if (count_process < max_process):
-                fo = open(COUNT_PROCESS_FILE, "w")
-                fo.write("%i\n" % (count_process + 1))
-                fo.close()
-                run = True
-
-            time.sleep(0.1)
-        finally:
-            os.remove(LOCK_FILE)
-
-def adjust_count_process():
-    create_lock(LOCK_FILE)
-    try:
-        fo = open(COUNT_PROCESS_FILE, "r+")
-        count_process = int(fo.readline().strip())
-        fo.seek(0)
-        fo.truncate()
-        fo.write("%i\n" % (count_process - 1))
-        fo.close()
-    finally:
-        os.remove(LOCK_FILE)
+    while (1):
+        if (os.path.isfile("grant")):
+            break
+        time.sleep(0.1)
 
 def main():
+    append_to_queue()
     wait_on_run()
 
     korel_stdout = open("stdout.txt", "w")
@@ -149,5 +119,3 @@ if __name__ == '__main__':
         traceback.print_tb(exc_traceback, file=traceback_file)
         traceback_file.write("%s: %s\n" % (exc_type, exc_value))
         traceback_file.close()
-    finally:
-        adjust_count_process()

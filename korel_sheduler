@@ -1,0 +1,68 @@
+#!/usr/bin/env python2.5
+# -*- coding: utf-8 -*-
+
+""" Korel sheduler """
+
+#
+# Author: Jan Fuchs <fuky@sunstel.asu.cas.cz>
+# $Date$
+# $Rev$
+#
+
+import os
+import sys
+import ConfigParser
+from optparse import OptionParser
+
+script_path = os.path.dirname(os.path.realpath(os.path.abspath(sys.argv[0])))
+sys.path.append(os.path.abspath("%s/lib" % script_path))
+os.chdir(script_path)
+
+import share
+
+KOREL_SCHEDULER_PID = "./var/run/korel_scheduler.pid"
+KOREL_QUEUE_PATH = "./var/queue"
+
+def process_queue(count):
+    i = 0
+    for job in os.listdir(KOREL_QUEUE_PATH):
+        if (i > count):
+            break
+
+        job_path = "%s/%s" % (KOREL_QUEUE_PATH, job)
+        if (os.path.isfile(job_path)):
+            fo = open(job_path, "r")
+            job_dir = fo.readline().strip()
+            fo.close()
+
+            fo = open("%s/grant" % job_dir, "w")
+            fo.write("%i\n" % os.getpid())
+            fo.close()
+
+            os.remove(job_path)
+
+            print "%s granted" % job_dir
+            i += 1
+
+def main():
+    parser = OptionParser()
+
+    parser.add_option("-d", "--daemonize", dest="daemonize", default=None, action="store_true")
+    parser.add_option("-c", "--conf", dest="conf", default="korel_rws.cfg")
+
+    (options, args) = parser.parse_args()
+    #print "options: %s, args: %s" % (options, args)
+
+    if (options.daemonize):
+        share.daemonize()
+
+    share.create_pid(KOREL_SCHEDULER_PID)
+
+    process_queue(1)
+
+if __name__ == '__main__':
+    try:
+        main()
+    finally:
+        if (os.path.isfile(KOREL_SCHEDULER_PID)):
+            os.remove(KOREL_SCHEDULER_PID)

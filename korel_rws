@@ -9,6 +9,18 @@
 # $Rev$
 #
 
+#
+#    In CherryPy 3.1, cherrypy.engine can do all of the above via the
+#    Daemonizer plugin: 
+#
+#        from cherrypy.restsrv.plugins import Daemonizer, PIDFile 
+#        Daemonizer(cherrypy.engine).subscribe()
+#
+#    ...and manage pid files via: 
+#
+#        PIDFile(cherrypy.engine, filename).subscribe()
+#
+
 import os
 import sys
 import re
@@ -25,7 +37,6 @@ import Image
 import ImageDraw
 import ImageFont
 import ConfigParser
-
 from optparse import OptionParser
 from lxml import etree
 from cherrypy import _cperror
@@ -39,6 +50,7 @@ os.chdir(script_path)
 
 import jobs
 import template
+import share
 
 from mail import send_mail
 
@@ -412,55 +424,6 @@ class RootServer:
         else: 
             return False 
 
-#
-#    In CherryPy 3.1, cherrypy.engine can do all of the above via the
-#    Daemonizer plugin: 
-#
-#        from cherrypy.restsrv.plugins import Daemonizer, PIDFile 
-#        Daemonizer(cherrypy.engine).subscribe()
-#
-#    ...and manage pid files via: 
-#
-#        PIDFile(cherrypy.engine, filename).subscribe()
-#
-def daemonize():
-    pid = os.fork()
-    if (pid < 0):
-        sys.exit(1)
-    elif (pid > 0):
-        # exit the parent process
-        sys.exit(0)
-
-    os.setsid()
-    os.umask(0)
-
-    pid = os.fork()
-    if (pid < 0):
-        sys.exit(1)
-    elif (pid > 0):
-        # exit the parent process
-        sys.exit(0)
-    
-    os.close(sys.stdin.fileno())
-    os.close(sys.stdout.fileno())
-    os.close(sys.stderr.fileno())
-
-def create_pid():
-    if (os.path.isfile(KOREL_RWS_PID)):
-        pid_fo = open(KOREL_RWS_PID, "r")
-        old_pid = pid_fo.readline().strip()
-        pid_fo.close()
-
-        if (subprocess.call(["ps", "--pid", old_pid, "-o", "pid="]) != 0):
-            os.remove(KOREL_RWS_PID)
-
-    try:
-        fd = os.open(KOREL_RWS_PID, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0644)
-        os.write(fd, "%i\n" % os.getpid())
-        os.close(fd)
-    except:
-        sys.exit(1)
-
 def handle_error():
     cherrypy.response.status = 500
 
@@ -526,14 +489,12 @@ def main():
     environ.update({"KOREL_SMTP_SSL": str(options.smtp_ssl)})
     environ.update({"KOREL_MAX_PROCESS": cfg.get("korel", "max_process")})
 
-    # TODO: dodat aktualizaci count_process
-
     #print options
 
     if (options.daemonize):
-        daemonize()
+        share.daemonize()
 
-    create_pid()
+    share.create_pid(KOREL_RWS_PID)
 
     cherrypy.log.screen = False
     cherrypy.log.access_file = os.path.abspath("%s/access.log" % VAR_LOG_PATH)
@@ -565,8 +526,9 @@ def main():
  
     cherrypy.quickstart(RootServer(), '/', config=config)
 
-    if (os.path.isfile(KOREL_RWS_PID)):
-        os.remove(KOREL_RWS_PID)
-
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    finally:
+        if (os.path.isfile(KOREL_RWS_PID)):
+            os.remove(KOREL_RWS_PID)
