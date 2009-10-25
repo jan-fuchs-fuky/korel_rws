@@ -37,6 +37,17 @@ settings = {
     "max_runtime": 0,
 }
 
+def kill_long_run_job(job_dir_path, pid):
+    fo = open("%s/time_begin" % job_dir_path, "r")
+    time_begin = int(fo.readline().strip())
+    fo.close()
+
+    if (time.time() - time_begin) > (settings.max_runtime * 60):
+        # TODO: posilat 9 pokud job neukonci 15, nejlepe pomoci wrapperu
+        logger.info("%s kill TERM %i" % (job_dir_path, pid))
+        os.kill(pid, 15)
+        #os.kill(pid, 9)
+
 def get_process_count():
     process_count = 0
 
@@ -52,12 +63,14 @@ def get_process_count():
             korel_pid = "%s/korel.pid" % job_dir_path
             try:
                 fo = open(korel_pid, "r")
-                pid = fo.readline().strip()
+                pid = int(fo.readline().strip())
                 fo.close()
 
-                cwd = os.readlink("/proc/%s/cwd" % pid)
+                cwd = os.readlink("/proc/%i/cwd" % pid)
                 if (os.path.abspath(job_dir_path) == cwd):
                     process_count += 1
+
+                kill_long_run_job(job_dir_path, pid)
             except Exception, e:
                 #print repr(e)
                 pass
