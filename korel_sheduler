@@ -11,6 +11,8 @@
 
 import os
 import sys
+import time
+import logging
 import ConfigParser
 from optparse import OptionParser
 
@@ -20,31 +22,77 @@ os.chdir(script_path)
 
 import share
 
+__version__ = "0.1.0"
+
 KOREL_SCHEDULER_PID = "./var/run/korel_scheduler.pid"
 KOREL_QUEUE_PATH = "./var/queue"
+KOREL_JOBS_PATH = "./jobs"
+KOREL_SCHEDULER_LOG = "./var/log/korel_scheduler.log"
+
+logger = None
+settings = {
+    "max_process": 0,
+    "max_memory": 0,
+    "max_disk_space": 0,
+    "max_runtime": 0,
+}
+
+def get_process_count():
+    process_count = 0
+
+    user_dirs = os.listdir(KOREL_JOBS_PATH)
+    for user_dir in user_dirs:
+        user_dir_path = "%s/%s" % (KOREL_JOBS_PATH, user_dir)
+        if (not os.path.isdir(user_dir_path)) or (user_dir[0] == "."):
+            continue 
+
+        job_dirs = os.listdir(user_dir_path)
+        for job_dir in job_dirs:
+            job_dir_path =  "%s/%s" % (user_dir_path, job_dir)
+            korel_pid = "%s/korel.pid" % job_dir_path
+            try:
+                fo = open(korel_pid, "r")
+                pid = fo.readline().strip()
+                fo.close()
+
+                cwd = os.readlink("/proc/%s/cwd" % pid)
+                if (os.path.abspath(job_dir_path) == cwd):
+                    process_count += 1
+            except Exception, e:
+                #print repr(e)
+                pass
+
+    return process_count
 
 def process_queue(count):
-    i = 0
+    queue = []
     for job in os.listdir(KOREL_QUEUE_PATH):
-        if (i > count):
-            break
-
         job_path = "%s/%s" % (KOREL_QUEUE_PATH, job)
         if (os.path.isfile(job_path)):
-            fo = open(job_path, "r")
-            job_dir = fo.readline().strip()
-            fo.close()
+            queue.append([os.stat(job_path).st_mtime, job_path])
+    queue.sort()
+    queue_len = len(queue)
 
-            fo = open("%s/grant" % job_dir, "w")
-            fo.write("%i\n" % os.getpid())
-            fo.close()
+    i = 0
+    while (i < count) and (queue_len > i):
+        job_path = queue[i][1]
 
-            os.remove(job_path)
+        fo = open(job_path, "r")
+        job_dir = fo.readline().strip()
+        fo.close()
 
-            print "%s granted" % job_dir
-            i += 1
+        fo = open("%s/grant" % job_dir, "w")
+        fo.write("%i\n" % os.getpid())
+        fo.close()
+
+        os.remove(job_path)
+        logger.info("%s granted" % job_dir)
+
+        i += 1
 
 def main():
+    global settings
+
     parser = OptionParser()
 
     parser.add_option("-d", "--daemonize", dest="daemonize", default=None, action="store_true")
@@ -58,11 +106,38 @@ def main():
 
     share.create_pid(KOREL_SCHEDULER_PID)
 
-    process_queue(1)
+    logger.info("starting korel_sheduler %s" % __version__)
+
+    cfg = ConfigParser.RawConfigParser()
+    cfg.read("%s/etc/%s" % (os.path.dirname(__file__), options.conf))
+
+    settings["max_process"] = cfg.getint("korel", "max_process")
+    settings["max_memory"] = cfg.getint("korel", "max_memory")
+    settings["max_disk_space"] = cfg.getint("korel", "max_disk_space")
+    settings["max_runtime"] = cfg.getint("korel", "max_runtime")
+
+    while (1):
+        count = get_process_count()
+        count = settings["max_process"] - count
+        if (count > 0):
+            process_queue(count)
+        time.sleep(1)
 
 if __name__ == '__main__':
+    logger = logging.getLogger("korel_sheduler")
+    logger.setLevel(logging.DEBUG)
+
+    formatter = logging.Formatter("%(asctime)s - %(name)s[%(process)d] - %(levelname)s - %(message)s")
+    fh = logging.FileHandler(KOREL_SCHEDULER_LOG)
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+
     try:
         main()
+    except:
+        logger.exception("exception")
     finally:
         if (os.path.isfile(KOREL_SCHEDULER_PID)):
             os.remove(KOREL_SCHEDULER_PID)
+        logger.info("exit")
