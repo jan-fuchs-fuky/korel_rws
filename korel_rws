@@ -336,7 +336,7 @@ class RootServer:
 
     def GET(self, params):
         if (not params.has_key("id")):
-            return jobs.list(self.username)
+            return jobs.list(self.username, self.user_settings["max_disk_space"])
         elif (params.has_key("action")):
             if (params["action"] == "phase"):
                 return jobs.phase(self.username, params["id"])
@@ -363,9 +363,9 @@ class RootServer:
             if (not params.has_key("korel_dat")) or (not params.has_key("korel_archive")):
                 result = "<start_new_job><email>%s</email></start_new_job>" % self.email
                 return template.xml2html(StringIO(result))
-            return jobs.start(self.username, params, environ)
+            return jobs.start(self.username, params, environ, self.user_settings["max_disk_space"])
         elif (params.has_key("action")) and (params["action"] == "againstart"):
-            return jobs.againstart(self.username, params, environ)
+            return jobs.againstart(self.username, params, environ, self.user_settings["max_disk_space"])
         else:
             return jobs.cancel(self.username, params["id"])
 
@@ -390,29 +390,18 @@ class RootServer:
         user_xml = "%s/%s.xml" % (USERS_PATH, self.username)
 
         if (os.path.isfile(user_xml)):
-            lock = "%s/user_%s.lock" % (VAR_RUN_PATH, self.username)
-            # LOCK
-            korel_lock(lock)
-            try:
-                user_elts = etree.parse(user_xml, parser).xpath('/user')
-            finally:
-                korel_unlock(lock)
-                # UNLOCK
-
-            for user_elt in user_elts:
-                if ((not user_elt.attrib.has_key("allow")) or (user_elt.attrib["allow"] != "true")):
-                    return False
-
-                for element in user_elt.getchildren():
-                    if (element.tag == "hashed_password"):
-                        hashed_password = element.text
-                    elif (element.tag == "email"):
-                        self.email = element.text.strip()
+            self.user_settings = share.get_user_settings("%s/%s.xml" % (share.KOREL_USERS_PATH, self.username))
+            self.email = self.user_settings["email"]
+            hashed_password = self.user_settings["hashed_password"]
 
             salt = hashed_password[:hashed_password.rfind("$")+23]
 
             if (bcrypt.hashpw(self.password, salt) != hashed_password):
                 return False
+
+            if (not self.user_settings.has_key("max_disk_space")):
+                self.user_settings.update({"max_disk_space": share.settings["max_disk_space"]})
+            self.user_settings["max_disk_space"] *= (1024 * 1024)
 
             try:
                 home = "%s/%s" % (jobs.JOBS_PATH, self.username)
@@ -479,6 +468,12 @@ def main():
         options.smtp_ssl = cfg.getboolean("smtp", "ssl")
     if (options.service_url is None):
         options.service_url = cfg.get("server", "service-url")
+
+    share.settings.update({"max_process": cfg.getint("korel", "max_process")})
+    share.settings.update({"max_memory": cfg.getint("korel", "max_memory")})
+    share.settings.update({"max_disk_space": cfg.getint("korel", "max_disk_space")})
+    share.settings.update({"max_upload_file": cfg.getint("korel", "max_upload_file") * 1024 * 1024})
+    share.settings.update({"max_runtime": cfg.getint("korel", "max_runtime")})
 
     os.environ.update({"KOREL_SERVICE_URL": options.service_url})
 

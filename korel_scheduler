@@ -26,7 +26,6 @@ __version__ = "0.1.0"
 
 KOREL_SCHEDULER_PID = "./var/run/korel_scheduler.pid"
 KOREL_QUEUE_PATH = "./var/queue"
-KOREL_JOBS_PATH = "./jobs"
 KOREL_SCHEDULER_LOG = "./var/log/korel_scheduler.log"
 
 class KorelScheduler():
@@ -103,9 +102,9 @@ class KorelScheduler():
     def get_process_count(self):
         process_count = 0
     
-        user_dirs = os.listdir(KOREL_JOBS_PATH)
+        user_dirs = os.listdir(share.KOREL_JOBS_PATH)
         for user_dir in user_dirs:
-            user_dir_path = "%s/%s" % (KOREL_JOBS_PATH, user_dir)
+            user_dir_path = "%s/%s" % (share.KOREL_JOBS_PATH, user_dir)
             if (not os.path.isdir(user_dir_path)) or (user_dir[0] == "."):
                 continue 
  

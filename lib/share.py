@@ -9,14 +9,30 @@
 
 import os
 import sys
-import subprocess
+from subprocess import Popen, call, PIPE
 from lxml import etree
  
 KOREL_USERS_PATH = "./etc/users"
+KOREL_JOBS_PATH = "./jobs"
 
 parser = etree.XMLParser(remove_blank_text=True)
+settings = {}
 
-def save_user_settings(user_xml_path):
+def bytes2human(size):
+    size = int(size)
+    if (size < 1024):
+        return "%iB" % size
+    elif (size < 1024*1024):
+        return "%.1fKB" % (size / 1024.0)
+    else:
+        return "%.1fMB" % (size / (1024.0*1024.0))
+
+def disk_usage(user):
+    dir = "%s/%s" % (KOREL_JOBS_PATH, user)
+    pipe = Popen(["du", "-s", dir], stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+    return int(pipe.stdout.readline().strip().split()[0])
+
+def get_user_settings(user_xml_path):
     settings = {}
     user_elts = etree.parse(user_xml_path, parser).xpath('/user')[0]
     for element in user_elts.getchildren():
@@ -36,13 +52,13 @@ def load_user_settings():
             continue
 
         user = user_xml[:-4]
-        user_settings.update({user: save_user_settings(user_xml_path)})
+        user_settings.update({user: get_user_settings(user_xml_path)})
 
 def refresh_user_settings(user, user_settings_mtime):
     user_xml_path = "%s/%s.xml" % (KOREL_USERS_PATH, user)
 
     if (os.stat(user_xml_path).st_mtime > user_settings_mtime):
-        return save_user_settings(user_xml_path)
+        return get_user_settings(user_xml_path)
 
     return {}
 
@@ -83,7 +99,7 @@ def create_pid(filename):
         old_pid = pid_fo.readline().strip()
         pid_fo.close()
 
-        if (subprocess.call(["ps", "--pid", old_pid, "-o", "pid="]) != 0):
+        if (call(["ps", "--pid", old_pid, "-o", "pid="]) != 0):
             os.remove(filename)
 
     try:

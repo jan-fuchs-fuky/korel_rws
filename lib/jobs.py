@@ -16,6 +16,7 @@ from StringIO import StringIO
 from subprocess import Popen, PIPE, call
 
 import template
+import share
 
 JOBS_PATH = "./jobs"
 
@@ -150,7 +151,9 @@ def process_archive(params, job_dir, tmp_dir):
     call(["mv", "%s/korel/korel.tmp" % tmp_dir, job_dir])
     call(["rm", "-rf", tmp_dir])
 
-def start(username, params, environ):
+def start(username, params, environ, max_disk_space):
+    errmsg = "<body><![CDATA[<h2>Start new job</h2>%s]]></body>"
+
     input_files = False
     archive = False
 
@@ -161,11 +164,16 @@ def start(username, params, environ):
         input_files = True
 
     if (not input_files):
-        result = "<body><![CDATA["
-        result += "<h2>Start new job</h2>"
-        result += "Failure. Must upload files korel.dat and korel.par."
-        result += "]]></body>"
-        return template.xml2html(StringIO(result))
+        errmsg = errmsg %  "Failure. Must upload files korel.dat and korel.par."
+        return template.xml2html(StringIO(errmsg))
+
+    if (share.disk_usage(username) > max_disk_space):
+        errmsg = errmsg % "Failure. Disk quota exceeded."
+        return template.xml2html(StringIO(errmsg))
+
+    if (int(cherrypy.request.headers["Content-length"]) > share.settings["max_upload_file"]):
+        errmsg = errmsg % "Failure. Upload file is large."
+        return template.xml2html(StringIO(errmsg))
 
     id, job_dir = make_id_jobdir(username)
 
@@ -174,12 +182,9 @@ def start(username, params, environ):
             tmp_dir = os.tmpnam()
             process_archive(params, job_dir, tmp_dir)
         except Exception, e:
-            result = "<body><![CDATA["
-            result += "<h2>Start new job</h2>"
-            result += "Failure. Error when processing '%s'. %s" % (params["korel_archive"].filename, e)
-            result += "]]></body>"
+            errmsg = errmsg % ("Failure. Error when processing '%s'. %s" % (params["korel_archive"].filename, e))
             call(["rm", "-rf", job_dir, tmp_dir])
-            return template.xml2html(StringIO(result))
+            return template.xml2html(StringIO(errmsg))
     else:
         save_upload_file(params["korel_dat"], "%s/korel.dat" % job_dir)
         save_upload_file(params["korel_par"], "%s/korel.par" % job_dir, xml=True)
@@ -227,7 +232,11 @@ def again(username, email, id):
         call(["rm", "-rf", new_job_dir])
         raise Exception(e)
 
-def againstart(username, params, environ):
+def againstart(username, params, environ, max_disk_space):
+    if (share.disk_usage(username) > max_disk_space):
+        errmsg = "<body><![CDATA[<h2>Start new job</h2>Failure. Disk quota exceeded.]]></body>"
+        return template.xml2html(StringIO(errmsg))
+
     job_dir = get_job_dir(username, params["id"])
 
     file = open("%s/korel.par" % job_dir, "w")
@@ -303,11 +312,25 @@ def human_time(seconds):
 
     return "%02i:%02i:%02i" % (hours, minutes, seconds)
 
-def list(username):
+def list(username, max_disk_space):
     dirs_dict = {}
+
+    disk_usage = share.disk_usage(username)
+    if (disk_usage > max_disk_space):
+        disk_full = True
+    else:
+        disk_full = False
+
+    disk_usage_pct = "%.0f" % (disk_usage / (max_disk_space * 0.01))
+    disk_usage = share.bytes2human(disk_usage)
+    disk_space = share.bytes2human(max_disk_space)
 
     result = "<jobslist>\n"
     result += "<user>%s</user>\n" % username
+    result += "<disk_usage>%s</disk_usage>\n" % disk_usage
+    result += "<disk_usage_pct>%s</disk_usage_pct>\n" % disk_usage_pct
+    result += "<disk_space>%s</disk_space>\n" % disk_space
+    result += "<disk_full>%s</disk_full>\n" % disk_full
 
     root, dirs, files = os.walk("%s/%s" % (JOBS_PATH, username)).next()
     for dir in dirs:

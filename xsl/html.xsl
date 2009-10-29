@@ -195,6 +195,18 @@
         <!-- BEGIN jobslist -->
         <xsl:if test="name(/*)='jobslist'">
             <h2>List of jobs user <xsl:value-of select="/jobslist/user"/></h2>
+            <p>
+            disk space <xsl:value-of select="/jobslist/disk_space"/>,
+            disk usage <xsl:value-of select="/jobslist/disk_usage"/>
+            (<xsl:value-of select="/jobslist/disk_usage_pct"/>%)
+            </p>
+
+            <xsl:if test="/jobslist/disk_full='True'">
+            <div class="errmsg">
+            warning: disk quota exceeded
+            </div>
+            </xsl:if>
+
             <table>
                 <tr>
                     <td><b>ID</b></td>
