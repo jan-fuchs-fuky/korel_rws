@@ -28,7 +28,7 @@ def append_to_queue():
     queue_path = tempfile.mktemp(prefix="%s_" % user, dir=KOREL_QUEUE_PATH)
 
     fo = open(queue_path, "w")
-    fo.write("%s\n" % curdir)
+    fo.write("%s\n" % os.path.abspath(os.curdir))
     fo.close()
 
 # TODO: omezit cas cekani

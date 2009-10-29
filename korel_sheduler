@@ -95,10 +95,10 @@ class KorelScheduler():
         fo = open("%s/time_begin" % job_dir_path, "r")
         time_begin = int(fo.readline().strip())
         fo.close()
-    
+
         if (time.time() - time_begin) > (max_runtime * 60):
             self.logger.info("%s kill %i" % (job_dir_path, pid))
-            subprocess.Popen(["./korel_kill", pid])
+            os.system("./korel_kill %i &" % pid)
     
     def save_user_settings(self, user, user_xml_path):
         try:
@@ -106,7 +106,7 @@ class KorelScheduler():
             for element in user_elts.getchildren():
                 value = element.text.strip()
                 # TODO: datovy typ ukladat jako atribut primo v XML
-                if (value[:4] == "max_"):
+                if (element.tag[:4] == "max_"):
                     value = int(value)
                 self.user_settings[user].update({element.tag: value})
         except:
@@ -127,9 +127,13 @@ class KorelScheduler():
     
     def refresh_user_settings(self, user):
         user_xml_path = "%s/%s.xml" % (KOREL_USERS_PATH, user)
-        if (os.stat(user_xml_path).st_mtime > self.user_settings_mtime):
-            self.logger.info("Load changed '%s'" % user_xml_path)
-            self.save_user_settings(user, user_xml_path)
+
+        try:
+            if (os.stat(user_xml_path).st_mtime > self.user_settings_mtime):
+                self.logger.info("Load changed '%s'" % user_xml_path)
+                self.save_user_settings(user, user_xml_path)
+        except:
+            self.logger.exception(user_xml_path)
 
     def get_process_count(self):
         process_count = 0
