@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+kill -TERM $1 &> /dev/null
+sleep 3
+kill -KILL $1 &> /dev/null
+
+exit 0

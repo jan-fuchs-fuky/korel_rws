@@ -13,6 +13,7 @@ import os
 import sys
 import time
 import logging
+import subprocess
 import ConfigParser
 from optparse import OptionParser
 from lxml import etree
@@ -96,10 +97,8 @@ class KorelScheduler():
         fo.close()
     
         if (time.time() - time_begin) > (max_runtime * 60):
-            # TODO: posilat 9 pokud job neukonci 15, nejlepe pomoci wrapperu
-            self.logger.info("%s kill TERM %i" % (job_dir_path, pid))
-            os.kill(pid, 15)
-            #os.kill(pid, 9)
+            self.logger.info("%s kill %i" % (job_dir_path, pid))
+            subprocess.Popen(["./korel_kill", pid])
     
     def save_user_settings(self, user, user_xml_path):
         try:
