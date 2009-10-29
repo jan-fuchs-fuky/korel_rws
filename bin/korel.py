@@ -17,15 +17,14 @@ from subprocess import Popen, PIPE, call
 script_path = os.path.dirname(os.path.realpath(os.path.abspath(sys.argv[0])))
 sys.path.append(os.path.abspath("%s/../lib" % script_path))
 
+import share
 from mail import send_mail
 
 KOREL_QUEUE_PATH = "../../../var/queue"
 KOREL_PID = "korel.pid"
 
 def append_to_queue():
-    # /opt/korel_rws/jobs/USER/PID
-    curdir = os.path.abspath(os.curdir)
-    user = os.path.basename(curdir[:curdir.rfind("/")])
+    user = share.job_dir2user(os.curdir)
     queue_path = tempfile.mktemp(prefix="%s_" % user, dir=KOREL_QUEUE_PATH)
 
     fo = open(queue_path, "w")

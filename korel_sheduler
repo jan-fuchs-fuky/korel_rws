@@ -15,6 +15,7 @@ import time
 import logging
 import ConfigParser
 from optparse import OptionParser
+from lxml import etree
 
 script_path = os.path.dirname(os.path.realpath(os.path.abspath(sys.argv[0])))
 sys.path.append(os.path.abspath("%s/lib" % script_path))
@@ -24,133 +25,180 @@ import share
 
 __version__ = "0.1.0"
 
+KOREL_USERS_PATH = "./etc/users"
 KOREL_SCHEDULER_PID = "./var/run/korel_scheduler.pid"
 KOREL_QUEUE_PATH = "./var/queue"
 KOREL_JOBS_PATH = "./jobs"
 KOREL_SCHEDULER_LOG = "./var/log/korel_scheduler.log"
 
-logger = None
-settings = {
-    "max_process": 0,
-    "max_memory": 0,
-    "max_disk_space": 0,
-    "max_runtime": 0,
-}
+class KorelScheduler():
+    def __init__(self):
+        self.user_settings = {}
+        self.user_settings_mtime = 0
+        self.parser = etree.XMLParser(remove_blank_text=True)
+        self.settings = {
+            "max_process": 0,
+            "max_memory": 0,
+            "max_disk_space": 0,
+            "max_runtime": 0,
+        }
 
-def kill_long_run_job(job_dir_path, pid):
-    fo = open("%s/time_begin" % job_dir_path, "r")
-    time_begin = int(fo.readline().strip())
-    fo.close()
+        self.logger = logging.getLogger("korel_sheduler")
+        self.logger.setLevel(logging.DEBUG)
 
-    if (time.time() - time_begin) > (settings.max_runtime * 60):
-        # TODO: posilat 9 pokud job neukonci 15, nejlepe pomoci wrapperu
-        logger.info("%s kill TERM %i" % (job_dir_path, pid))
-        os.kill(pid, 15)
-        #os.kill(pid, 9)
+        formatter = logging.Formatter("%(asctime)s - %(name)s[%(process)d] - %(levelname)s - %(message)s")
+        fh = logging.FileHandler(KOREL_SCHEDULER_LOG)
+        fh.setLevel(logging.DEBUG)
+        fh.setFormatter(formatter)
+        self.logger.addHandler(fh)
 
-def get_process_count():
-    process_count = 0
+        option_parser = OptionParser()
 
-    user_dirs = os.listdir(KOREL_JOBS_PATH)
-    for user_dir in user_dirs:
-        user_dir_path = "%s/%s" % (KOREL_JOBS_PATH, user_dir)
-        if (not os.path.isdir(user_dir_path)) or (user_dir[0] == "."):
-            continue 
+        option_parser.add_option("-d", "--daemonize", dest="daemonize", default=None, action="store_true")
+        option_parser.add_option("-c", "--conf", dest="conf", default="korel_rws.cfg")
 
-        job_dirs = os.listdir(user_dir_path)
-        for job_dir in job_dirs:
-            job_dir_path =  "%s/%s" % (user_dir_path, job_dir)
-            korel_pid = "%s/korel.pid" % job_dir_path
-            try:
-                fo = open(korel_pid, "r")
-                pid = int(fo.readline().strip())
-                fo.close()
+        (options, args) = option_parser.parse_args()
+        #print "options: %s, args: %s" % (options, args)
 
-                cwd = os.readlink("/proc/%i/cwd" % pid)
-                if (os.path.abspath(job_dir_path) == cwd):
-                    process_count += 1
+        if (options.daemonize):
+            share.daemonize()
 
-                kill_long_run_job(job_dir_path, pid)
-            except Exception, e:
-                #print repr(e)
-                pass
+        share.create_pid(KOREL_SCHEDULER_PID)
 
-    return process_count
+        self.logger.info("starting korel_sheduler %s" % __version__)
 
-def process_queue(count):
-    queue = []
-    for job in os.listdir(KOREL_QUEUE_PATH):
-        job_path = "%s/%s" % (KOREL_QUEUE_PATH, job)
-        if (os.path.isfile(job_path)):
-            queue.append([os.stat(job_path).st_mtime, job_path])
-    queue.sort()
-    queue_len = len(queue)
+        cfg = ConfigParser.RawConfigParser()
+        cfg.read("%s/etc/%s" % (os.path.dirname(__file__), options.conf))
 
-    i = 0
-    while (i < count) and (queue_len > i):
-        job_path = queue[i][1]
+        self.settings["max_process"] = cfg.getint("korel", "max_process")
+        self.settings["max_memory"] = cfg.getint("korel", "max_memory")
+        self.settings["max_disk_space"] = cfg.getint("korel", "max_disk_space")
+        self.settings["max_runtime"] = cfg.getint("korel", "max_runtime")
 
-        fo = open(job_path, "r")
-        job_dir = fo.readline().strip()
+    def run(self):
+        self.load_user_settings()
+
+        while (1):
+            count = self.get_process_count()
+            count = self.settings["max_process"] - count
+            if (count > 0):
+                self.process_queue(count)
+            time.sleep(1)
+
+    def kill_long_run_job(self, user, job_dir_path, pid):
+        if (self.user_settings[user].has_key("max_runtime")):
+            max_runtime = self.user_settings[user]["max_runtime"]
+        else:
+            max_runtime = self.settings.max_runtime
+
+        fo = open("%s/time_begin" % job_dir_path, "r")
+        time_begin = int(fo.readline().strip())
         fo.close()
+    
+        if (time.time() - time_begin) > (max_runtime * 60):
+            # TODO: posilat 9 pokud job neukonci 15, nejlepe pomoci wrapperu
+            self.logger.info("%s kill TERM %i" % (job_dir_path, pid))
+            os.kill(pid, 15)
+            #os.kill(pid, 9)
+    
+    def save_user_settings(self, user, user_xml_path):
+        try:
+            user_elts = etree.parse(user_xml_path, self.parser).xpath('/user')[0]
+            for element in user_elts.getchildren():
+                value = element.text.strip()
+                # TODO: datovy typ ukladat jako atribut primo v XML
+                if (value[:4] == "max_"):
+                    value = int(value)
+                self.user_settings[user].update({element.tag: value})
+        except:
+            self.logger.exception(user_xml_path)
 
-        fo = open("%s/grant" % job_dir, "w")
-        fo.write("%i\n" % os.getpid())
-        fo.close()
+    def load_user_settings(self):
+        self.user_settings = {}
+        self.user_settings_mtime = time.time()
+    
+        for user_xml in os.listdir(KOREL_USERS_PATH):
+            user_xml_path = "%s/%s" % (KOREL_USERS_PATH, user_xml)
+            if (user_xml[-4:] != ".xml") or (not os.path.isfile(user_xml_path)):
+                continue
+    
+            user = user_xml[:-4]
+            self.user_settings.update({user: {}})
+            self.save_user_settings(user, user_xml_path)
+    
+    def refresh_user_settings(self, user):
+        user_xml_path = "%s/%s.xml" % (KOREL_USERS_PATH, user)
+        if (os.stat(user_xml_path).st_mtime > self.user_settings_mtime):
+            self.logger.info("Load changed '%s'" % user_xml_path)
+            self.save_user_settings(user, user_xml_path)
 
-        os.remove(job_path)
-        logger.info("%s granted" % job_dir)
-
-        i += 1
-
+    def get_process_count(self):
+        process_count = 0
+    
+        user_dirs = os.listdir(KOREL_JOBS_PATH)
+        for user_dir in user_dirs:
+            user_dir_path = "%s/%s" % (KOREL_JOBS_PATH, user_dir)
+            if (not os.path.isdir(user_dir_path)) or (user_dir[0] == "."):
+                continue 
+    
+            self.refresh_user_settings(user_dir)
+            job_dirs = os.listdir(user_dir_path)
+            for job_dir in job_dirs:
+                job_dir_path =  "%s/%s" % (user_dir_path, job_dir)
+                korel_pid = "%s/korel.pid" % job_dir_path
+                try:
+                    fo = open(korel_pid, "r")
+                    pid = int(fo.readline().strip())
+                    fo.close()
+    
+                    cwd = os.readlink("/proc/%i/cwd" % pid)
+                    if (os.path.abspath(job_dir_path) == cwd):
+                        process_count += 1
+    
+                    self.kill_long_run_job(user_dir, job_dir_path, pid)
+                except Exception, e:
+                    #print repr(e)
+                    pass
+    
+        return process_count
+    
+    def process_queue(self, count):
+        queue = []
+        for job in os.listdir(KOREL_QUEUE_PATH):
+            job_path = "%s/%s" % (KOREL_QUEUE_PATH, job)
+            if (os.path.isfile(job_path)):
+                queue.append([os.stat(job_path).st_mtime, job_path])
+        queue.sort()
+        queue_len = len(queue)
+    
+        i = 0
+        while (i < count) and (queue_len > i):
+            job_path = queue[i][1]
+    
+            fo = open(job_path, "r")
+            job_dir = fo.readline().strip()
+            fo.close()
+    
+            fo = open("%s/grant" % job_dir, "w")
+            fo.write("%i\n" % os.getpid())
+            fo.close()
+    
+            os.remove(job_path)
+            self.logger.info("%s granted" % job_dir)
+    
+            i += 1
+    
 def main():
-    global settings
-
-    parser = OptionParser()
-
-    parser.add_option("-d", "--daemonize", dest="daemonize", default=None, action="store_true")
-    parser.add_option("-c", "--conf", dest="conf", default="korel_rws.cfg")
-
-    (options, args) = parser.parse_args()
-    #print "options: %s, args: %s" % (options, args)
-
-    if (options.daemonize):
-        share.daemonize()
-
-    share.create_pid(KOREL_SCHEDULER_PID)
-
-    logger.info("starting korel_sheduler %s" % __version__)
-
-    cfg = ConfigParser.RawConfigParser()
-    cfg.read("%s/etc/%s" % (os.path.dirname(__file__), options.conf))
-
-    settings["max_process"] = cfg.getint("korel", "max_process")
-    settings["max_memory"] = cfg.getint("korel", "max_memory")
-    settings["max_disk_space"] = cfg.getint("korel", "max_disk_space")
-    settings["max_runtime"] = cfg.getint("korel", "max_runtime")
-
-    while (1):
-        count = get_process_count()
-        count = settings["max_process"] - count
-        if (count > 0):
-            process_queue(count)
-        time.sleep(1)
-
-if __name__ == '__main__':
-    logger = logging.getLogger("korel_sheduler")
-    logger.setLevel(logging.DEBUG)
-
-    formatter = logging.Formatter("%(asctime)s - %(name)s[%(process)d] - %(levelname)s - %(message)s")
-    fh = logging.FileHandler(KOREL_SCHEDULER_LOG)
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
+    korel_scheduler = KorelScheduler()
 
     try:
-        main()
+        korel_scheduler.run()
     except:
-        logger.exception("exception")
+        korel_scheduler.logger.exception("exception")
     finally:
         if (os.path.isfile(KOREL_SCHEDULER_PID)):
             os.remove(KOREL_SCHEDULER_PID)
-        logger.info("exit")
+        korel_scheduler.logger.info("exit")
+
+if __name__ == '__main__':
+    main()

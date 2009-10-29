@@ -9,6 +9,12 @@
 
 import os
 import sys
+import subprocess
+
+def job_dir2user(job_dir):
+    # /opt/korel_rws/jobs/USER/PID
+    curdir = os.path.abspath(job_dir)
+    return os.path.basename(curdir[:curdir.rfind("/")])
 
 def daemonize():
     pid = os.fork()
