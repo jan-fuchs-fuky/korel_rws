@@ -10,6 +10,41 @@
 import os
 import sys
 import subprocess
+from lxml import etree
+ 
+KOREL_USERS_PATH = "./etc/users"
+
+parser = etree.XMLParser(remove_blank_text=True)
+
+def save_user_settings(user_xml_path):
+    settings = {}
+    user_elts = etree.parse(user_xml_path, parser).xpath('/user')[0]
+    for element in user_elts.getchildren():
+        value = element.text.strip()
+        # TODO: datovy typ ukladat jako atribut primo v XML
+        if (element.tag[:4] == "max_"):
+            value = int(value)
+        settings.update({element.tag: value})
+
+    return settings
+
+def load_user_settings():
+    user_settings = {}
+    for user_xml in os.listdir(KOREL_USERS_PATH):
+        user_xml_path = "%s/%s" % (KOREL_USERS_PATH, user_xml)
+        if (user_xml[-4:] != ".xml") or (not os.path.isfile(user_xml_path)):
+            continue
+
+        user = user_xml[:-4]
+        user_settings.update({user: save_user_settings(user_xml_path)})
+
+def refresh_user_settings(user, user_settings_mtime):
+    user_xml_path = "%s/%s.xml" % (KOREL_USERS_PATH, user)
+
+    if (os.stat(user_xml_path).st_mtime > user_settings_mtime):
+        return save_user_settings(user_xml_path)
+
+    return {}
 
 def job_dir2user(job_dir):
     # /opt/korel_rws/jobs/USER/PID

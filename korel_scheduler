@@ -13,10 +13,8 @@ import os
 import sys
 import time
 import logging
-import subprocess
 import ConfigParser
 from optparse import OptionParser
-from lxml import etree
 
 script_path = os.path.dirname(os.path.realpath(os.path.abspath(sys.argv[0])))
 sys.path.append(os.path.abspath("%s/lib" % script_path))
@@ -26,7 +24,6 @@ import share
 
 __version__ = "0.1.0"
 
-KOREL_USERS_PATH = "./etc/users"
 KOREL_SCHEDULER_PID = "./var/run/korel_scheduler.pid"
 KOREL_QUEUE_PATH = "./var/queue"
 KOREL_JOBS_PATH = "./jobs"
@@ -36,7 +33,6 @@ class KorelScheduler():
     def __init__(self):
         self.user_settings = {}
         self.user_settings_mtime = 0
-        self.parser = etree.XMLParser(remove_blank_text=True)
         self.settings = {
             "max_process": 0,
             "max_memory": 0,
@@ -77,7 +73,11 @@ class KorelScheduler():
         self.settings["max_runtime"] = cfg.getint("korel", "max_runtime")
 
     def run(self):
-        self.load_user_settings()
+        try:
+            self.user_settings_mtime = time.time()
+            self.user_settings = share.load_user_settings()
+        except:
+            self.logger.exception("exception")
 
         while (1):
             count = self.get_process_count()
@@ -99,41 +99,6 @@ class KorelScheduler():
         if (time.time() - time_begin) > (max_runtime * 60):
             self.logger.info("%s kill %i" % (job_dir_path, pid))
             os.system("./korel_kill %i &" % pid)
-    
-    def save_user_settings(self, user, user_xml_path):
-        try:
-            user_elts = etree.parse(user_xml_path, self.parser).xpath('/user')[0]
-            for element in user_elts.getchildren():
-                value = element.text.strip()
-                # TODO: datovy typ ukladat jako atribut primo v XML
-                if (element.tag[:4] == "max_"):
-                    value = int(value)
-                self.user_settings[user].update({element.tag: value})
-        except:
-            self.logger.exception(user_xml_path)
-
-    def load_user_settings(self):
-        self.user_settings = {}
-        self.user_settings_mtime = time.time()
-    
-        for user_xml in os.listdir(KOREL_USERS_PATH):
-            user_xml_path = "%s/%s" % (KOREL_USERS_PATH, user_xml)
-            if (user_xml[-4:] != ".xml") or (not os.path.isfile(user_xml_path)):
-                continue
-    
-            user = user_xml[:-4]
-            self.user_settings.update({user: {}})
-            self.save_user_settings(user, user_xml_path)
-    
-    def refresh_user_settings(self, user):
-        user_xml_path = "%s/%s.xml" % (KOREL_USERS_PATH, user)
-
-        try:
-            if (os.stat(user_xml_path).st_mtime > self.user_settings_mtime):
-                self.logger.info("Load changed '%s'" % user_xml_path)
-                self.save_user_settings(user, user_xml_path)
-        except:
-            self.logger.exception(user_xml_path)
 
     def get_process_count(self):
         process_count = 0
@@ -143,8 +108,15 @@ class KorelScheduler():
             user_dir_path = "%s/%s" % (KOREL_JOBS_PATH, user_dir)
             if (not os.path.isdir(user_dir_path)) or (user_dir[0] == "."):
                 continue 
-    
-            self.refresh_user_settings(user_dir)
+ 
+            try:
+                new_user_settings = share.refresh_user_settings(user_dir, self.user_settings_mtime)
+                if (new_user_settings):
+                    self.logger.info("Load changed user '%s'" % user_dir)
+                    self.user_settings.update({user_dir: new_user_settings})
+            except:
+                self.logger.exception("exception")
+
             job_dirs = os.listdir(user_dir_path)
             for job_dir in job_dirs:
                 job_dir_path =  "%s/%s" % (user_dir_path, job_dir)
