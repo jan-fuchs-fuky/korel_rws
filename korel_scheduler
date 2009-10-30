@@ -172,6 +172,7 @@ def korel_scheduler_exit():
 def handler(signum, frame):
     korel_scheduler.logger.info("receive signal %s" % signum)
     korel_scheduler_exit()
+    sys.exit(1)
 
 def main():
     try:
