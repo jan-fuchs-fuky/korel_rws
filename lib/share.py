@@ -29,7 +29,7 @@ def bytes2human(size):
 
 def disk_usage(user):
     dir = "%s/%s" % (KOREL_JOBS_PATH, user)
-    pipe = Popen(["du", "-s", dir], stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+    pipe = Popen(["du", "-s", "-b", dir], stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
     return int(pipe.stdout.readline().strip().split()[0])
 
 def get_user_settings(user_xml_path):

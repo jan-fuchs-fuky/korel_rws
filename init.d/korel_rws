@@ -20,6 +20,9 @@ PATH=/bin:/usr/bin:/sbin:/usr/sbin
 DAEMON=${KOREL_RWS_DIR}/korel_rws
 PIDFILE=${KOREL_RWS_DIR}/var/run/korel_rws.pid
 
+SCHEDULER=${KOREL_RWS_DIR}/korel_scheduler
+SCHEDULER_PIDFILE=${KOREL_RWS_DIR}/var/run/korel_scheduler.pid
+
 # Arguments to atd
 #
 ARGS="-d"
@@ -30,11 +33,13 @@ case "$1" in
     start)
         log_action_begin_msg "Starting korel_rws daemon"
         start-stop-daemon --start --quiet --pidfile "$PIDFILE" --chuid "$KOREL_RWS_USER" --exec "$DAEMON" -- $ARGS
+        start-stop-daemon --start --quiet --pidfile "$PIDFILE" --chuid "$KOREL_RWS_USER" --exec "$SCHEDULER" -- $ARGS
         log_action_end_msg $?
         ;;
     stop)
         log_action_begin_msg "Stopping korel_rws daemon"
         start-stop-daemon --stop --quiet --pidfile "$PIDFILE"
+        start-stop-daemon --stop --quiet --pidfile "$SCHEDULER_PIDFILE"
         log_action_end_msg $?
         ;;
     restart|force-reload)

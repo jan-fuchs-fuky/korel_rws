@@ -13,6 +13,7 @@ import os
 import sys
 import time
 import logging
+import signal
 import ConfigParser
 from optparse import OptionParser
 
@@ -161,18 +162,26 @@ class KorelScheduler():
             self.logger.info("%s granted" % job_dir)
     
             i += 1
-    
-def main():
-    korel_scheduler = KorelScheduler()
 
+def korel_scheduler_exit():
+    if (os.path.isfile(KOREL_SCHEDULER_PID)):
+        os.remove(KOREL_SCHEDULER_PID)
+
+    korel_scheduler.logger.info("exit")
+
+def handler(signum, frame):
+    korel_scheduler.logger.info("receive signal %s" % signum)
+    korel_scheduler_exit()
+
+def main():
     try:
+        signal.signal(signal.SIGTERM, handler)
         korel_scheduler.run()
     except:
         korel_scheduler.logger.exception("exception")
     finally:
-        if (os.path.isfile(KOREL_SCHEDULER_PID)):
-            os.remove(KOREL_SCHEDULER_PID)
-        korel_scheduler.logger.info("exit")
+        korel_scheduler_exit()
 
 if __name__ == '__main__':
+    korel_scheduler = KorelScheduler()
     main()

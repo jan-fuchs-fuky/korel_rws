@@ -429,8 +429,39 @@ def handle_error():
 #   handlers for SIGTERM and SIGHUP.
 #
 def main():
-    global options, environ
+    share.create_pid(KOREL_RWS_PID)
 
+    cherrypy.log.screen = False
+    cherrypy.log.access_file = os.path.abspath("%s/access.log" % VAR_LOG_PATH)
+    cherrypy.log.error_file = os.path.abspath("%s/error.log" % VAR_LOG_PATH)
+
+    #cfg = ConfigParser.RawConfigParser()
+    #cfg.add_section("smtp")
+    #cfg.set("smtp", "addresss", options.smtp_address)
+    #cfg.set("smtp", "port", options.smtp_port)
+    #cfg.set("smtp", "user", options.smtp_user)
+    #cfg.set("smtp", "password", options.smtp_password)
+    #cfg.set("smtp", "ssl", options.smtp_ssl)
+
+    #fo_cfg = open("./etc/korel_rws.cfg", "w")
+    #cfg.write(fo_cfg)
+    #fo_cfg.close()
+
+    config = {
+        'global': {
+            'server.socket_host': options.address,
+            'server.socket_port': options.port,
+            'server.ssl_certificate': 'cert.pem',
+            'server.ssl_private_key': 'key.pem',
+            'request.error_response': handle_error,
+            'error_page.404': "error/404.html",
+            'error_page.401': "error/401.html"
+        }
+    } 
+ 
+    cherrypy.quickstart(RootServer(), '/', config=config)
+
+if __name__ == '__main__':
     parser = OptionParser()
 
     parser.add_option("-p", "--port", dest="port", type="int", default=None)
@@ -489,39 +520,6 @@ def main():
     if (options.daemonize):
         share.daemonize()
 
-    share.create_pid(KOREL_RWS_PID)
-
-    cherrypy.log.screen = False
-    cherrypy.log.access_file = os.path.abspath("%s/access.log" % VAR_LOG_PATH)
-    cherrypy.log.error_file = os.path.abspath("%s/error.log" % VAR_LOG_PATH)
-
-    #cfg = ConfigParser.RawConfigParser()
-    #cfg.add_section("smtp")
-    #cfg.set("smtp", "addresss", options.smtp_address)
-    #cfg.set("smtp", "port", options.smtp_port)
-    #cfg.set("smtp", "user", options.smtp_user)
-    #cfg.set("smtp", "password", options.smtp_password)
-    #cfg.set("smtp", "ssl", options.smtp_ssl)
-
-    #fo_cfg = open("./etc/korel_rws.cfg", "w")
-    #cfg.write(fo_cfg)
-    #fo_cfg.close()
-
-    config = {
-        'global': {
-            'server.socket_host': options.address,
-            'server.socket_port': options.port,
-            'server.ssl_certificate': 'cert.pem',
-            'server.ssl_private_key': 'key.pem',
-            'request.error_response': handle_error,
-            'error_page.404': "error/404.html",
-            'error_page.401': "error/401.html"
-        }
-    } 
- 
-    cherrypy.quickstart(RootServer(), '/', config=config)
-
-if __name__ == '__main__':
     try:
         main()
     finally:
