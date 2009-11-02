@@ -78,7 +78,41 @@
             </xsl:otherwise>
         </xsl:choose>
 
-        <xsl:call-template name="html-header"/>
+        <xsl:value-of select="$html/header_begin" disable-output-escaping="yes"/>
+        <hr/>
+        <div class="menu">
+            <a href="{$service_url}">Home</a> -
+            <a href="{$service_url}/help">Help</a> -
+
+            <xsl:choose>
+                <xsl:when test="not(string($user))">
+                    <a href="{$service_url}/user/register">Create New Account</a> -
+                    <a href="{$service_url}/login">Login</a>
+                </xsl:when>
+                <xsl:otherwise>
+                    User <b><xsl:value-of select="$user"/></b> is logged on -
+                    <a href="{$service_url}/logout">Logout</a>
+                </xsl:otherwise>
+            </xsl:choose>
+
+        </div>
+        <hr/>
+        <xsl:value-of select="$html/header_end" disable-output-escaping="yes"/>
+        
+        <xsl:if test="string($user)">
+            <table>
+            <tr><td>
+                <form action="{$service_url}/jobs" method="POST">
+                <input type="submit" value="Start new job"/>
+                </form>
+            </td>
+            <td>
+                <form action="{$service_url}/jobs" method="get">
+                <input type="submit" value="List jobs"/>
+                </form>
+            </td></tr>
+            </table>
+        </xsl:if>
 
         <!-- BEGIN results -->
         <xsl:if test="name(/*)='result'">
@@ -89,7 +123,6 @@
 
             <p>
             Job <xsl:value-of select="$id"/>
-            user <xsl:value-of select="/result/user"/>
             <xsl:text> </xsl:text><xsl:value-of select="$phase"/>.
             </p>
 
@@ -130,11 +163,10 @@
 
         <!-- BEGIN phase -->
         <xsl:if test="name(/*)='phase'">
-            <xsl:variable name="user" select="/phase/user"/>
             <xsl:variable name="id" select="/phase/id"/>
             <xsl:variable name="phase" select="/phase/phase"/>
 
-            <h2>Phase of job <xsl:value-of select="$id"/> user <xsl:value-of select="$user"/></h2>
+            <h2>Phase of job <xsl:value-of select="$id"/></h2>
             <xsl:choose>
                 <xsl:when test="$phase='EXECUTING'">
                     The job is running.
@@ -194,7 +226,7 @@
 
         <!-- BEGIN jobslist -->
         <xsl:if test="name(/*)='jobslist'">
-            <h2>List of jobs user <xsl:value-of select="/jobslist/user"/></h2>
+            <h2>List of jobs</h2>
             <p>
             disk space <xsl:value-of select="/jobslist/disk_space"/>,
             disk usage <xsl:value-of select="/jobslist/disk_usage"/>
@@ -275,7 +307,7 @@
         <xsl:if test="name(/*)='register_user'">
             <h2>Register user</h2>
 
-            <xsl:if test="not(/register_user/errmsg='')">
+            <xsl:if test="not(string(/register_user/errmsg))">
                 <div class="errmsg"><xsl:value-of select="/register_user/errmsg"/></div>
             </xsl:if>
 

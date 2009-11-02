@@ -38,38 +38,17 @@
 <center><table class="main"><tr><td>
 ]]></begin_refresh>
 
-<header><![CDATA[
-
+<header_begin><![CDATA[
 <h1>Korel RESTful Web Service</h1>
 
 </td></tr>
 <tr><td>
+]]></header_begin>
 
-    <hr>
-    <div class="menu">
-        <a href="{$service_url}">Home</a> -
-        <a href="{$service_url}/help">Help</a> -
-        <a href="{$service_url}/user/register">Create New Account</a>
-    </div>
-    <hr>
-
+<header_end><![CDATA[
 </td></tr>
 <tr><td>
-
-    <table>
-    <tr><td>
-        <form action="{$service_url}/jobs" method="post">
-        <input type="submit" value="Start new job">
-        </form>
-    </td>
-    <td>
-        <form action="{$service_url}/jobs" method="get">
-        <input type="submit" value="List jobs">
-        </form>
-    </td></tr>
-    </table>
-
-]]></header>
+]]></header_end>
 
 <end><![CDATA[
 </td></tr></table></center>

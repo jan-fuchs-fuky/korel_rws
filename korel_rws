@@ -214,6 +214,21 @@ class RootServer:
         return template.xml2html("./xml/index.xml")
 
     @cherrypy.expose
+    def logout(self):
+        cookie = cherrypy.response.cookie
+        cookie["KorelLogout"] = "true"
+
+        cherrypy.response.headers["www-authenticate"] = httpauth.basicAuth("Korel RESTful Web Services") 
+        raise cherrypy.HTTPError(401, "You are not authorized to access that resource") 
+
+    @cherrypy.expose
+    def login(self):
+        cookie = cherrypy.response.cookie
+        cookie["KorelLogout"] = "false"
+
+        raise cherrypy.HTTPRedirect(["/jobs"], 303)
+
+    @cherrypy.expose
     def user(self, *vpath, **params):
         method = cherrypy.request.method
 
@@ -361,8 +376,8 @@ class RootServer:
     def POST(self, params):
         if (not params.has_key("id")):
             if (not params.has_key("korel_dat")) or (not params.has_key("korel_archive")):
-                result = "<start_new_job><email>%s</email></start_new_job>" % self.email
-                return template.xml2html(StringIO(result))
+                result  = "<start_new_job><email>%s</email></start_new_job>" % self.email
+                return template.xml2html(StringIO(result), self.username)
             return jobs.start(self.username, params, environ, self.user_settings["max_disk_space"])
         elif (params.has_key("action")) and (params["action"] == "againstart"):
             return jobs.againstart(self.username, params, environ, self.user_settings["max_disk_space"])
@@ -411,6 +426,8 @@ class RootServer:
             except:
                 return False
         else: 
+            self.username = ""
+            self.password = ""
             return False 
 
 def handle_error():

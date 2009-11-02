@@ -165,15 +165,15 @@ def start(username, params, environ, max_disk_space):
 
     if (not input_files):
         errmsg = errmsg %  "Failure. Must upload files korel.dat and korel.par."
-        return template.xml2html(StringIO(errmsg))
+        return template.xml2html(StringIO(errmsg), username)
 
     if (share.disk_usage(username) > max_disk_space):
         errmsg = errmsg % "Failure. Disk quota exceeded."
-        return template.xml2html(StringIO(errmsg))
+        return template.xml2html(StringIO(errmsg), username)
 
     if (int(cherrypy.request.headers["Content-length"]) > share.settings["max_upload_file"]):
         errmsg = errmsg % "Failure. Upload file is large."
-        return template.xml2html(StringIO(errmsg))
+        return template.xml2html(StringIO(errmsg), username)
 
     id, job_dir = make_id_jobdir(username)
 
@@ -184,7 +184,7 @@ def start(username, params, environ, max_disk_space):
         except Exception, e:
             errmsg = errmsg % ("Failure. Error when processing '%s'. %s" % (params["korel_archive"].filename, e))
             call(["rm", "-rf", job_dir, tmp_dir])
-            return template.xml2html(StringIO(errmsg))
+            return template.xml2html(StringIO(errmsg), username)
     else:
         save_upload_file(params["korel_dat"], "%s/korel.dat" % job_dir)
         save_upload_file(params["korel_par"], "%s/korel.par" % job_dir, xml=True)
@@ -227,7 +227,7 @@ def again(username, email, id):
 
         result.append("</again>")
 
-        return template.xml2html(StringIO("".join(result)))
+        return template.xml2html(StringIO("".join(result)), username)
     except Exception, e:
         call(["rm", "-rf", new_job_dir])
         raise Exception(e)
@@ -235,7 +235,7 @@ def again(username, email, id):
 def againstart(username, params, environ, max_disk_space):
     if (share.disk_usage(username) > max_disk_space):
         errmsg = "<body><![CDATA[<h2>Start new job</h2>Failure. Disk quota exceeded.]]></body>"
-        return template.xml2html(StringIO(errmsg))
+        return template.xml2html(StringIO(errmsg), username)
 
     job_dir = get_job_dir(username, params["id"])
 
@@ -264,10 +264,10 @@ def cancel(username, id):
 
     result = "<body><![CDATA["
     result += "<h2>Cancel job</h2>"
-    result += "Job %s user %s canceled." % (id, username)
+    result += "Job %s canceled." % id
     result += "]]></body>"
 
-    return template.xml2html(StringIO(result))
+    return template.xml2html(StringIO(result), username)
 
 def kill(pid):
     try:
@@ -299,10 +299,10 @@ def remove(username, id):
 
     result = "<body><![CDATA["
     result += "<h2>Remove job</h2>"
-    result += "Job %s user %s removed." % (id, username)
+    result += "Job %s removed." % id
     result += "]]></body>"
 
-    return template.xml2html(StringIO(result))
+    return template.xml2html(StringIO(result), username)
 
 def human_time(seconds):
     hours = seconds / 3600
@@ -326,7 +326,6 @@ def list(username, max_disk_space):
     disk_space = share.bytes2human(max_disk_space)
 
     result = "<jobslist>\n"
-    result += "<user>%s</user>\n" % username
     result += "<disk_usage>%s</disk_usage>\n" % disk_usage
     result += "<disk_usage_pct>%s</disk_usage_pct>\n" % disk_usage_pct
     result += "<disk_space>%s</disk_space>\n" % disk_space
@@ -374,7 +373,7 @@ def list(username, max_disk_space):
         result += "</job>\n"
 
     result += "</jobslist>\n"
-    return template.xml2html(StringIO(result))
+    return template.xml2html(StringIO(result), username)
 
 def get_pahase(job_dir):
     returncode_txt = "%s/returncode.txt" % job_dir
@@ -403,7 +402,6 @@ def results(username, id):
     hidden_files = ["korel.pid", "returncode.txt", "comment", "project", "time_begin", "time_end", "grant"]
 
     result = "<result>\n"
-    result += "<user>%s</user>\n" % username
     result += "<id>%s</id>\n" % id
     result += "<phase>%s</phase>\n" % phase_value
 
@@ -438,7 +436,7 @@ def results(username, id):
 
     result += "</result>\n"
 
-    return template.xml2html(StringIO(result))
+    return template.xml2html(StringIO(result), username)
 
 def download(username, id, file):
     job_dir = get_job_dir(username, id)
@@ -457,9 +455,8 @@ def phase(username, id):
         raise cherrypy.HTTPRedirect(["/jobs/%s/results" % id], 303)
 
     result = "<phase>\n"
-    result += "<user>%s</user>\n" % username
     result += "<id>%s</id>\n" % id
     result += "<phase>%s</phase>\n" % phase_value
     result += "</phase>\n"
 
-    return template.xml2html(StringIO(result))
+    return template.xml2html(StringIO(result), username)
