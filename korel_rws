@@ -406,6 +406,10 @@ class RootServer:
 
         if (os.path.isfile(user_xml)):
             self.user_settings = share.get_user_settings("%s/%s.xml" % (share.KOREL_USERS_PATH, self.username))
+
+            if (self.user_settings["attrib"].has_key("allow")) and (self.user_settings["attrib"]["allow"] != "true"):
+                return False
+
             self.email = self.user_settings["email"]
             hashed_password = self.user_settings["hashed_password"]
 
@@ -479,20 +483,20 @@ def main():
     cherrypy.quickstart(RootServer(), '/', config=config)
 
 if __name__ == '__main__':
-    parser = OptionParser()
+    option_parser = OptionParser()
 
-    parser.add_option("-p", "--port", dest="port", type="int", default=None)
-    parser.add_option("-a", "--address", dest="address", default=None)
-    parser.add_option("-d", "--daemonize", dest="daemonize", default=None, action="store_true")
-    parser.add_option("-c", "--conf", dest="conf", default="korel_rws.cfg")
-    parser.add_option("--smtp-ssl", dest="smtp_ssl", default=None, action="store_true")
-    parser.add_option("--smtp-user", dest="smtp_user", default=None)
-    parser.add_option("--smtp-password", dest="smtp_password", default=None)
-    parser.add_option("--smtp-addresss", dest="smtp_address", default=None)
-    parser.add_option("--smtp-port", dest="smtp_port", type="int", default=None)
-    parser.add_option("--service-url", dest="service_url", default=None)
+    option_parser.add_option("-p", "--port", dest="port", type="int", default=None)
+    option_parser.add_option("-a", "--address", dest="address", default=None)
+    option_parser.add_option("-d", "--daemonize", dest="daemonize", default=None, action="store_true")
+    option_parser.add_option("-c", "--conf", dest="conf", default="korel_rws.cfg")
+    option_parser.add_option("--smtp-ssl", dest="smtp_ssl", default=None, action="store_true")
+    option_parser.add_option("--smtp-user", dest="smtp_user", default=None)
+    option_parser.add_option("--smtp-password", dest="smtp_password", default=None)
+    option_parser.add_option("--smtp-addresss", dest="smtp_address", default=None)
+    option_parser.add_option("--smtp-port", dest="smtp_port", type="int", default=None)
+    option_parser.add_option("--service-url", dest="service_url", default=None)
 
-    (options, args) = parser.parse_args()
+    (options, args) = option_parser.parse_args()
     #print "options: %s, args: %s" % (options, args)
 
     cfg = ConfigParser.RawConfigParser()

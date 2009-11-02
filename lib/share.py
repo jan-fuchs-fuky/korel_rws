@@ -33,8 +33,9 @@ def disk_usage(user):
     return int(pipe.stdout.readline().strip().split()[0])
 
 def get_user_settings(user_xml_path):
-    settings = {}
     user_elts = etree.parse(user_xml_path, parser).xpath('/user')[0]
+    settings = {"attrib": user_elts.attrib}
+
     for element in user_elts.getchildren():
         value = element.text.strip()
         # TODO: datovy typ ukladat jako atribut primo v XML
