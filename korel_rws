@@ -232,9 +232,9 @@ class RootServer:
     def user(self, *vpath, **params):
         method = cherrypy.request.method
 
-        action = vpath[0]
+        what = vpath[0]
 
-        if ((method == "POST") and (action == "register")):
+        if ((method == "POST") and (what == "register")):
             # defence against mathproblem_png == "../../any_file" atack
             mathproblem_png = os.path.basename(params["mathproblem_png"])
             if (len(mathproblem_png) != len(params["mathproblem_png"])):
@@ -300,7 +300,7 @@ class RootServer:
                 raise cherrypy.HTTPRedirect(["/user/register?%s" % urllib.urlencode(params)], 303)
 
             return template.xml2html(StringIO(result))
-        elif ((method == "GET") and (action == "register")):
+        elif ((method == "GET") and (what == "register")):
             mathproblem_png = make_mathproblem()
 
             result  = "<register_user>"
@@ -313,7 +313,7 @@ class RootServer:
             result += "</register_user>"
 
             return template.xml2html(StringIO(result))
-        elif ((method == "GET") and (action == "confirm")):
+        elif ((method == "GET") and (what == "confirm")):
             return action_confirmation(vpath[1])
         else:
             raise cherrypy.HTTPError(400, "Bad Request")
@@ -333,7 +333,7 @@ class RootServer:
 
     @cherrypy.expose
     def jobs(self, *vpath, **params):
-        vpath_des = ["id", "action", "file"]
+        vpath_des = ["id", "what", "file"]
 
         for i in range(len(vpath)):
             params.update({vpath_des[i]: vpath[i]})
@@ -352,41 +352,48 @@ class RootServer:
     def GET(self, params):
         if (not params.has_key("id")):
             return jobs.list(self.username, self.user_settings["max_disk_space"])
-        elif (params.has_key("action")):
-            if (params["action"] == "phase"):
+        elif (params.has_key("what")):
+            if (params["what"] == "phase"):
                 return jobs.phase(self.username, params["id"])
-            elif (params["action"] == "remove"):
-                return jobs.remove(self.username, params["id"])
-            elif (params["action"] == "again"):
+            elif (params["what"] == "again"):
                 return jobs.again(self.username, self.email, params["id"])
-            elif (params["action"] == "results"):
+            elif (params["what"] == "results"):
                 if (params.has_key("file")):
                     return jobs.download(self.username, params["id"], params["file"])
                 else:
                     return jobs.results(self.username, params["id"])
-            elif (params["action"] == "lifetime"):
+            elif (params["what"] == "lifetime"):
                 raise cherrypy.HTTPError(400, "Bad Request")
-            elif (params["action"] == "quote"):
+            elif (params["what"] == "quote"):
                 raise cherrypy.HTTPError(400, "Bad Request")
             else:
                 raise cherrypy.HTTPError(400, "Bad Request")
         else:
-            raise cherrypy.HTTPError(400, "Bad Request")
+            return jobs.detail(self.username, params["id"])
 
     def POST(self, params):
         if (not params.has_key("id")):
             if (not params.has_key("korel_dat")) or (not params.has_key("korel_archive")):
                 result  = "<start_new_job><email>%s</email></start_new_job>" % self.email
                 return template.xml2html(StringIO(result), self.username)
-            return jobs.start(self.username, params, environ, self.user_settings["max_disk_space"])
-        elif (params.has_key("action")) and (params["action"] == "againstart"):
-            return jobs.againstart(self.username, params, environ, self.user_settings["max_disk_space"])
+            return jobs.start(self.username, params, self.user_settings["max_disk_space"])
+        elif (params.has_key("what")):
+            if (params["what"] == "againstart"):
+                return jobs.againstart(self.username, params, environ, self.user_settings["max_disk_space"])
+            elif (params["what"] == "phase") and (params.has_key("PHASE")):
+                if (params["PHASE"] == "ABORT"):
+                    return jobs.abort(self.username, params["id"])
+                elif (params["PHASE"] == "RUN"):
+                    return jobs.run(self.username, params["id"], environ)
+        elif (params.has_key("ACTION")):
+            if (params["ACTION"] == "DELETE"):
+                return jobs.delete(self.username, params["id"])
         else:
-            return jobs.cancel(self.username, params["id"])
+            raise cherrypy.HTTPError(400, "Bad Request")
 
     def DELETE(self, params):
         if (params.has_key("id")):
-            return jobs.cancel(self.username, params["id"])
+            return jobs.delete(self.username, params["id"])
         else:
             raise cherrypy.HTTPError(400, "Bad Request")
 

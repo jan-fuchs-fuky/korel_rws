@@ -151,7 +151,7 @@ def process_archive(params, job_dir, tmp_dir):
     call(["mv", "%s/korel/korel.tmp" % tmp_dir, job_dir])
     call(["rm", "-rf", tmp_dir])
 
-def start(username, params, environ, max_disk_space):
+def start(username, params, max_disk_space):
     errmsg = "<body><![CDATA[<h2>Start new job</h2>%s]]></body>"
 
     input_files = False
@@ -196,9 +196,17 @@ def start(username, params, environ, max_disk_space):
     if (params.has_key("mailing")):
         save2file("%s/mailing" % job_dir, params["email"])
 
+    raise cherrypy.HTTPRedirect(["/jobs/%i" % id], 303)
+
+def run(username, id, environ):
+    job_dir = get_job_dir(username, id)
     start_korel(job_dir, environ)
 
-    raise cherrypy.HTTPRedirect(["/jobs/%i/phase" % id], 303)
+    fo = open("%s/phase" % job_dir, "w")
+    fo.write("QUEUED\n")
+    fo.close()
+
+    raise cherrypy.HTTPRedirect(["/jobs/%s" % id], 303)
 
 def again(username, email, id):
     try:
@@ -253,7 +261,7 @@ def againstart(username, params, environ, max_disk_space):
 
     raise cherrypy.HTTPRedirect(["/jobs/%s/phase" % params["id"]], 303)
 
-def cancel(username, id):
+def abort(username, id):
     job_dir = get_job_dir(username, id)
 
     file = open("%s/korel.pid" % job_dir, "r")
@@ -262,12 +270,11 @@ def cancel(username, id):
 
     kill(pid)
 
-    result = "<body><![CDATA["
-    result += "<h2>Cancel job</h2>"
-    result += "Job %s canceled." % id
-    result += "]]></body>"
+    fo = open("%s/phase" % job_dir, "w")
+    fo.write("ABORTED")
+    fo.close()
 
-    return template.xml2html(StringIO(result), username)
+    raise cherrypy.HTTPRedirect(["/jobs/%s" % id], 303)
 
 def kill(pid):
     try:
@@ -283,7 +290,7 @@ def kill(pid):
     except OSError:
         pass
 
-def remove(username, id):
+def delete(username, id):
     job_dir = get_job_dir(username, id)
 
     try:
@@ -297,12 +304,7 @@ def remove(username, id):
 
     call(["rm", "-rf", job_dir])
 
-    result = "<body><![CDATA["
-    result += "<h2>Remove job</h2>"
-    result += "Job %s removed." % id
-    result += "]]></body>"
-
-    return template.xml2html(StringIO(result), username)
+    raise cherrypy.HTTPRedirect(["/jobs"], 303)
 
 def human_time(seconds):
     hours = seconds / 3600
@@ -345,7 +347,7 @@ def list(username, max_disk_space):
         id = item[0]
         job_dir = "%s/%s" % (root, id)
 
-        phase_value = get_pahase("%s" % job_dir)
+        phase_value = get_phase("%s" % job_dir)
         project = get_file("%s/project" % job_dir)
         comment = get_file("%s/comment" % job_dir)
         time_begin = get_file("%s/time_begin" % job_dir)
@@ -375,14 +377,22 @@ def list(username, max_disk_space):
     result += "</jobslist>\n"
     return template.xml2html(StringIO(result), username)
 
-def get_pahase(job_dir):
+def get_phase(job_dir):
     returncode_txt = "%s/returncode.txt" % job_dir
     time_begin = "%s/time_begin" % job_dir
+    phase_path = "%s/phase" % job_dir
 
-    if (os.path.isfile("%s/traceback" % job_dir)):
+    phase = ""
+    if (os.path.isfile(phase_path)):
+        fo = open(phase_path, "r")
+        phase = fo.readline().strip()
+        fo.close()
+
+    if (phase == "ABORTED"):
+        return phase
+    elif (os.path.isfile("%s/traceback" % job_dir)):
         return "ERROR"
-
-    if (os.path.isfile(returncode_txt)):
+    elif (os.path.isfile(returncode_txt)):
         file = open(returncode_txt, "r")
         rc = int(file.read().strip())
         file.close()
@@ -393,13 +403,15 @@ def get_pahase(job_dir):
             return "ERROR"
     elif (os.path.isfile(time_begin)):
         return "EXECUTING"
+    elif (phase):
+        return phase
     else:
-        return "PREPARING"
+        return "PENDING"
 
 def results(username, id):
     job_dir = get_job_dir(username, id)
-    phase_value = get_pahase(job_dir)
-    hidden_files = ["korel.pid", "returncode.txt", "comment", "project", "time_begin", "time_end", "grant"]
+    phase_value = get_phase(job_dir)
+    hidden_files = ["korel.pid", "returncode.txt", "comment", "project", "time_begin", "time_end", "grant", "phase"]
 
     result = "<result>\n"
     result += "<id>%s</id>\n" % id
@@ -449,7 +461,7 @@ def download(username, id, file):
 
 def phase(username, id):
     job_dir = get_job_dir(username, id)
-    phase_value = get_pahase(job_dir)
+    phase_value = get_phase(job_dir)
 
     if (phase_value not in ["EXECUTING", "PREPARING"]):
         raise cherrypy.HTTPRedirect(["/jobs/%s/results" % id], 303)
@@ -460,3 +472,17 @@ def phase(username, id):
     result += "</phase>\n"
 
     return template.xml2html(StringIO(result), username)
+
+def detail(username, id):
+    job_dir = get_job_dir(username, id)
+
+    result = []
+    result.append("<detail>\n")
+    result.append("<id>%s</id>\n" % id)
+    result.append("<phase>%s</phase>\n" % get_phase(job_dir))
+    result.append("</detail>\n")
+
+    return template.xml2html(StringIO("".join(result)), username)
+
+def params():
+    pass

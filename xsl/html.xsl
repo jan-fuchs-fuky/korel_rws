@@ -177,8 +177,8 @@
                 <xsl:when test="$phase='ERROR'">
                     Some form of error has occurred.
                 </xsl:when>
-                <xsl:when test="$phase='PREPARING'">
-                    Preparing run job.
+                <xsl:when test="$phase='PENDING'">
+                    Pending on run.
                 </xsl:when>
                 <xsl:otherwise>
                     The job is in an unknown state.
@@ -260,16 +260,17 @@
                 <td><xsl:value-of select="$phase"/></td>
 
                 <td>
-                <xsl:if test="not($phase='PREPARING')">
+                <xsl:if test="not($phase='PENDING')">
                     <xsl:choose>
                         <xsl:when test="not($phase='EXECUTING')">
                             <form action="{$service_url}/jobs/{$id}/results" method="get">
-                            <input type="submit" value="show result"/>
+                            <input type="submit" value="SHOW RESULT"/>
                             </form>
                         </xsl:when>
                         <xsl:otherwise>
                             <form action="{$service_url}/jobs/{$id}" method="POST">
-                            <input type="submit" value="cancel job"/>
+                            <input type="hidden" name="PHASE" value="ABORT"/>
+                            <input type="submit" value="ABORT"/>
                             </form>
                         </xsl:otherwise>
                     </xsl:choose>
@@ -277,16 +278,25 @@
                 </td>
 
                 <td>
-                <xsl:if test="not($phase='PREPARING')">
-                    <form action="{$service_url}/jobs/{$id}/again" method="get">
-                    <input type="submit" value="run again"/>
-                    </form>
-                </xsl:if>
+                <xsl:choose>
+                    <xsl:when test="not($phase='PENDING')">
+                        <form action="{$service_url}/jobs/{$id}/again" method="get">
+                        <input type="submit" value="RUN AGAIN"/>
+                        </form>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <form action="{$service_url}/jobs/{$id}/phase" method="POST">
+                        <input type="hidden" name="PHASE" value="RUN"/>
+                        <input type="submit" value="RUN"/>
+                        </form>
+                    </xsl:otherwise>
+                </xsl:choose>
                 </td>
 
                 <td>
-                    <form action="{$service_url}/jobs/{$id}/remove" method="get">
-                    <input type="submit" value="remove"/>
+                    <form action="{$service_url}/jobs/{$id}" method="POST">
+                    <input type="hidden" name="ACTION" value="DELETE"/>
+                    <input type="submit" value="DELETE"/>
                     </form>
                 </td>
 
@@ -412,6 +422,54 @@
             </body>
         </xsl:if>
         <!-- END start_new_job -->
+
+        <!-- BEGIN detail -->
+        <xsl:if test="name(/*)='detail'">
+            <body>
+            <h2>Job Detail for <xsl:value-of select="/detail/id"/></h2>
+
+            <table>
+                <tr><td>Phase</td>
+                    <td><xsl:value-of select="/detail/phase"/>
+
+                        <xsl:choose>
+                            <xsl:when test="/detail/phase='PENDING'">
+                                <form action="{$service_url}/jobs/{/detail/id}/phase" method="POST">
+                                    <input type="hidden" name="PHASE" value="RUN"/>
+                                    <input type="submit" value="RUN"/>
+                                </form>
+                            </xsl:when>
+                            <xsl:when test="/detail/phase='COMPLETED'">
+                                <form action="{$service_url}/jobs/{/detail/id}" method="POST">
+                                    <input type="hidden" name="ACTION" value="DELETE"/>
+                                    <input type="submit" value="DELETE"/>
+                                </form>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <form action="{$service_url}/jobs/{/detail/id}/phase" method="POST">
+                                    <input type="hidden" name="PHASE" value="ABORT"/>
+                                    <input type="submit" value="ABORT"/>
+                                </form>
+                            </xsl:otherwise>
+                        </xsl:choose>
+
+                    </td>
+                </tr>
+                <tr><td>Start</td><td></td></tr>
+                <tr><td>End</td><td></td></tr>
+                <tr><td>ExecutionDuration</td><td> -1944854</td></tr>
+                <tr><td>Destruction</td><td>2010-02-13T20:42:20.494Z</td></tr>
+                <tr><td colspan="2"><b>PA details</b></td></tr>
+                <tr><td colspan="2">
+                    <a href="{$service_url}/jobs/{/detail/id}/results/korel.par">korel.par</a><br/>
+                    <a href="{$service_url}/jobs/{/detail/id}/results/korel.dat">korel.dat</a><br/>
+                    <a href="{$service_url}/jobs/{/detail/id}/results/korel.tmp">korel.tmp</a><br/>
+                </td></tr>
+            </table>
+
+            </body>
+        </xsl:if>
+        <!-- END detail -->
 
         <!-- BEGIN body -->
         <xsl:if test="name(/*)='body'">
