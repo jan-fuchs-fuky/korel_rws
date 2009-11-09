@@ -147,7 +147,7 @@ def action_confirmation(confirmation):
         result += "Welcome <b>%s</b>, registration is success." % login
         result += "]]></body>"
 
-        return template.xml2html(StringIO(result))
+        return template.xml2result(result)
     else:
         raise cherrypy.HTTPError(400, "Bad Request")
 
@@ -211,7 +211,7 @@ def register_user(params):
 class RootServer:
     @cherrypy.expose
     def index(self):
-        return template.xml2html("./xml/index.xml")
+        return template.xml2result("./xml/index.xml")
 
     @cherrypy.expose
     def logout(self):
@@ -299,7 +299,7 @@ class RootServer:
                 params.update({"errmsg": errmsg})
                 raise cherrypy.HTTPRedirect(["/user/register?%s" % urllib.urlencode(params)], 303)
 
-            return template.xml2html(StringIO(result))
+            return template.xml2result(result)
         elif ((method == "GET") and (what == "register")):
             mathproblem_png = make_mathproblem()
 
@@ -312,7 +312,7 @@ class RootServer:
 
             result += "</register_user>"
 
-            return template.xml2html(StringIO(result))
+            return template.xml2result(result)
         elif ((method == "GET") and (what == "confirm")):
             return action_confirmation(vpath[1])
         else:
@@ -362,6 +362,8 @@ class RootServer:
                     return jobs.download(self.username, params["id"], params["file"])
                 else:
                     return jobs.results(self.username, params["id"])
+            elif (params["what"] == "destruction"):
+                return jobs.destruction(self.username, params["id"])
             elif (params["what"] == "lifetime"):
                 raise cherrypy.HTTPError(400, "Bad Request")
             elif (params["what"] == "quote"):
@@ -375,7 +377,7 @@ class RootServer:
         if (not params.has_key("id")):
             if (not params.has_key("korel_dat")) or (not params.has_key("korel_archive")):
                 result  = "<start_new_job><email>%s</email></start_new_job>" % self.email
-                return template.xml2html(StringIO(result), self.username)
+                return template.xml2result(result, self.username)
             return jobs.start(self.username, params, self.user_settings["max_disk_space"])
         elif (params.has_key("what")):
             if (params["what"] == "againstart"):
@@ -449,7 +451,7 @@ def handle_error():
     result += "Sorry, an error occurred."
     result += "]]></body>"
 
-    cherrypy.response.body = [ template.xml2html(StringIO(result)) ]
+    cherrypy.response.body = [ template.xml2result(result) ]
     send_mail("fuky@fuky.org", "Error in Korel RESTful Web Service", _cperror.format_exc(), options)
 
 #

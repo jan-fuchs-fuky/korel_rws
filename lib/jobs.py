@@ -165,15 +165,15 @@ def start(username, params, max_disk_space):
 
     if (not input_files):
         errmsg = errmsg %  "Failure. Must upload files korel.dat and korel.par."
-        return template.xml2html(StringIO(errmsg), username)
+        return template.xml2result(errmsg, username)
 
     if (share.disk_usage(username) > max_disk_space):
         errmsg = errmsg % "Failure. Disk quota exceeded."
-        return template.xml2html(StringIO(errmsg), username)
+        return template.xml2result(errmsg, username)
 
     if (int(cherrypy.request.headers["Content-length"]) > share.settings["max_upload_file"]):
         errmsg = errmsg % "Failure. Upload file is large."
-        return template.xml2html(StringIO(errmsg), username)
+        return template.xml2result(errmsg, username)
 
     id, job_dir = make_id_jobdir(username)
 
@@ -184,7 +184,7 @@ def start(username, params, max_disk_space):
         except Exception, e:
             errmsg = errmsg % ("Failure. Error when processing '%s'. %s" % (params["korel_archive"].filename, e))
             call(["rm", "-rf", job_dir, tmp_dir])
-            return template.xml2html(StringIO(errmsg), username)
+            return template.xml2result(errmsg, username)
     else:
         save_upload_file(params["korel_dat"], "%s/korel.dat" % job_dir)
         save_upload_file(params["korel_par"], "%s/korel.par" % job_dir, xml=True)
@@ -235,7 +235,7 @@ def again(username, email, id):
 
         result.append("</again>")
 
-        return template.xml2html(StringIO("".join(result)), username)
+        return template.xml2result("".join(result), username)
     except Exception, e:
         call(["rm", "-rf", new_job_dir])
         raise Exception(e)
@@ -243,7 +243,7 @@ def again(username, email, id):
 def againstart(username, params, environ, max_disk_space):
     if (share.disk_usage(username) > max_disk_space):
         errmsg = "<body><![CDATA[<h2>Start new job</h2>Failure. Disk quota exceeded.]]></body>"
-        return template.xml2html(StringIO(errmsg), username)
+        return template.xml2result(errmsg, username)
 
     job_dir = get_job_dir(username, params["id"])
 
@@ -375,7 +375,7 @@ def list(username, max_disk_space):
         result += "</job>\n"
 
     result += "</jobslist>\n"
-    return template.xml2html(StringIO(result), username)
+    return template.xml2result(result, username)
 
 def get_phase(job_dir):
     returncode_txt = "%s/returncode.txt" % job_dir
@@ -448,7 +448,7 @@ def results(username, id):
 
     result += "</result>\n"
 
-    return template.xml2html(StringIO(result), username)
+    return template.xml2result(result, username)
 
 def download(username, id, file):
     job_dir = get_job_dir(username, id)
@@ -462,16 +462,21 @@ def download(username, id, file):
 def phase(username, id):
     job_dir = get_job_dir(username, id)
     phase_value = get_phase(job_dir)
+    result = []
 
-    if (phase_value not in ["EXECUTING", "PREPARING"]):
+    if ((cherrypy.request.wsgi_environ["HTTP_ACCEPT"]) == "application/xml"):
+        result.append('<uws:phase xmlns:uws="http://www.ivoa.net/xml/UWS/v0.9.2">')
+        result.append(phase_value)
+        result.append('</uws:phase>')
+        return template.xml2result("".join(result))
+    elif (phase_value not in ["EXECUTING", "PREPARING"]):
         raise cherrypy.HTTPRedirect(["/jobs/%s/results" % id], 303)
 
-    result = "<phase>\n"
-    result += "<id>%s</id>\n" % id
-    result += "<phase>%s</phase>\n" % phase_value
-    result += "</phase>\n"
-
-    return template.xml2html(StringIO(result), username)
+    result.append("<phase>\n")
+    result.append("<id>%s</id>\n" % id)
+    result.append("<phase>%s</phase>\n" % phase_value)
+    result.append("</phase>\n")
+    return template.xml2result("".join(result), username)
 
 def detail(username, id):
     job_dir = get_job_dir(username, id)
@@ -482,7 +487,24 @@ def detail(username, id):
     result.append("<phase>%s</phase>\n" % get_phase(job_dir))
     result.append("</detail>\n")
 
-    return template.xml2html(StringIO("".join(result)), username)
+    return template.xml2result("".join(result), username)
+
+def destruction(username, id):
+    job_dir = get_job_dir(username, id)
+
+    time_end = "%s/time_end" % job_dir
+    if (os.path.isfile(time_end)):
+        fo = open(time_end, "r")
+        destruction_time = time.gmtime(int(fo.readline().strip()) + (3600*24*30))
+        fo.close()
+    else:
+        destruction_time = time.gmtime(time.time() + (3600*24*30))
+
+    result = []
+    result.append('<uws:destruction xmlns:uws="http://www.ivoa.net/xml/UWS/v0.9.2">')
+    result.append(time.strftime("%Y-%m-%dT%H:%M:%S", destruction_time))
+    result.append('</uws:destruction>')
+    return template.xml2result("".join(result))
 
 def params():
     pass

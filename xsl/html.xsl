@@ -268,7 +268,7 @@
                             </form>
                         </xsl:when>
                         <xsl:otherwise>
-                            <form action="{$service_url}/jobs/{$id}" method="POST">
+                            <form action="{$service_url}/jobs/{$id}/phase" method="POST">
                             <input type="hidden" name="PHASE" value="ABORT"/>
                             <input type="submit" value="ABORT"/>
                             </form>
