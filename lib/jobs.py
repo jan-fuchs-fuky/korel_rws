@@ -306,13 +306,48 @@ def delete(username, id):
 
     raise cherrypy.HTTPRedirect(["/jobs"], 303)
 
-def human_time(seconds):
+def human_time(seconds, spare=0):
+    seconds = int(seconds)
+    if (spare != 0):
+        seconds -= int(spare)
+
     hours = seconds / 3600
     seconds = seconds % 3600
     minutes = seconds / 60
     seconds = seconds % 60
 
     return "%02i:%02i:%02i" % (hours, minutes, seconds)
+
+def format_time(seconds):
+    if (seconds):
+        return time.strftime("%Y-%m-%dT%H:%M:%S", int(seconds))
+    else:
+        return ""
+
+def get_info(job_dir):
+    info = {
+        "project": "",
+        "comment": "",
+        "phase": "",
+        "startTime": "",
+        "endTime": "",
+        "executionDuration": "",
+        "destruction": "",
+    }
+
+    for key in info.keys():
+        try:
+            # hidden file
+            fo = open("%s/.%s" % (job_dir, key), "r")
+            info[key] = fo.read().strip()
+            fo.close()
+        except:
+            info[key] = ""
+
+    return info
+
+def get_param(id, filename):
+    return "%s/jobs/%s/param/%s" % (share.settings["service_url"], id, filename)
 
 def list(username, max_disk_space):
     dirs_dict = {}
@@ -327,11 +362,11 @@ def list(username, max_disk_space):
     disk_usage = share.bytes2human(disk_usage)
     disk_space = share.bytes2human(max_disk_space)
 
-    result = "<jobslist>\n"
-    result += "<disk_usage>%s</disk_usage>\n" % disk_usage
-    result += "<disk_usage_pct>%s</disk_usage_pct>\n" % disk_usage_pct
-    result += "<disk_space>%s</disk_space>\n" % disk_space
-    result += "<disk_full>%s</disk_full>\n" % disk_full
+    # TODO
+    #result += "<disk_usage>%s</disk_usage>\n" % disk_usage
+    #result += "<disk_usage_pct>%s</disk_usage_pct>\n" % disk_usage_pct
+    #result += "<disk_space>%s</disk_space>\n" % disk_space
+    #result += "<disk_full>%s</disk_full>\n" % disk_full
 
     root, dirs, files = os.walk("%s/%s" % (JOBS_PATH, username)).next()
     for dir in dirs:
@@ -342,40 +377,51 @@ def list(username, max_disk_space):
         mtime = os.stat("%s/%s" % (root, dir)).st_mtime
         dirs_dict.update({dir: mtime})
 
+    result = []
+    result.append("<uws:joblist %s>" % share.XMLNS)
     # sort key dir by value mtime
     for item in sorted(dirs_dict.iteritems(), key=lambda (k,v): (v,k), reverse=True):
         id = item[0]
         job_dir = "%s/%s" % (root, id)
+        info = get_info(job_dir)
 
-        phase_value = get_phase("%s" % job_dir)
-        project = get_file("%s/project" % job_dir)
-        comment = get_file("%s/comment" % job_dir)
-        time_begin = get_file("%s/time_begin" % job_dir)
-        time_end = get_file("%s/time_end" % job_dir)
+        runningTime = ""
+        if (info["endTime"] and info["startTime"]):
+            runningTime = human_time(info["endTime"], info["startTime"])
+        elif (info["startTime"]):
+            runningTime = human_time(time.time(), info["startTime"])
 
-        human_time_begin = ""
-        human_time_run = ""
-        if (time_begin):
-            time_begin = int(time_begin)
-            human_time_begin = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time_begin))
+        result.append('<uws:job>')
+        result.append('<uws:jobId>%s</uws:jobId>"' % id)
+        result.append('<uws:ownerId>%s</uws:ownerId>' % username)
+        result.append('<uws:phase>%s</uws:phase>' % info["phase"])
+        result.append('<uws:startTime>%s</uws:startTime>' % format_time(info["startTime"]))
+        result.append('<uws:endTime>%s</uws:endTime>' % format_time(info["endTime"]))
+        result.append('<uws:executionDuration>%s</uws:executionDuration>' % info["executionDuration"])
+        result.append('<uws:destruction>%s</uws:destruction>' % format_time(info["destruction"]))
+        result.append('<uws:parameters>')
+        result.append('<uws:parameter id="image" byReference="true">jobs/jobid123/param/image</uws:parameter>')
+        result.append('<uws:parameter id="korel.dat" byReference="true">%s</uws:parameter>' % get_param(id, "korel.dat"))
+        result.append('<uws:parameter id="korel.par" byReference="true">%s</uws:parameter>' % get_param(id, "korel.par"))
+        result.append('<uws:parameter id="korel.tmp" byReference="true">%s</uws:parameter>' % get_param(id, "korel.tmp"))
+        result.append('</uws:parameters>')
+        result.append('<uws:results>')
+        result.append('<uws:result id="correctedImage" xlink:href="http://myserver.org/uws/jobs/jobid123/result/image"/>')
+        result.append('</uws:results>')
+        result.append('<uws:errorSummary type="transient">')
+        result.append('<uws:message>we have problem</uws:message>')
+        result.append('<uws:detail xlink:href="http://myserver.org/uws/jobs/jobid123/error"/>')
+        result.append('</uws:errorSummary>')
+        result.append('<uws:jobInfo>')
+        result.append('<comment>%s</comment>' % info["comment"])
+        result.append('<project>%s</project>' % info["project"])
+        result.append('<runningTime>%s</runningTime>' % runningTime)
+        result.append('</uws:jobInfo>')
+        result.append('</uws:job>')
 
-            if (time_end):
-                time_end = int(time_end)
-                human_time_run = human_time(time_end - time_begin)
-            else:
-                human_time_run = human_time(time.time() - time_begin)
+    result.append("</uws:joblist>")
 
-        result += "<job>\n"
-        result += "<id>%s</id>\n" % id
-        result += "<phase>%s</phase>\n" % phase_value
-        result += "<project>%s</project>\n" % project
-        result += "<comment>%s</comment>\n" % comment
-        result += "<time_begin>%s</time_begin>\n" % human_time_begin
-        result += "<time_run>%s</time_run>\n" % human_time_run
-        result += "</job>\n"
-
-    result += "</jobslist>\n"
-    return template.xml2result(result, username)
+    return template.xml2result("\n".join(result), username)
 
 def get_phase(job_dir):
     returncode_txt = "%s/returncode.txt" % job_dir

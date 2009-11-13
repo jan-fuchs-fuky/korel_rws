@@ -528,13 +528,14 @@ if __name__ == '__main__':
     if (options.smtp_ssl is None):
         options.smtp_ssl = cfg.getboolean("smtp", "ssl")
     if (options.service_url is None):
-        options.service_url = cfg.get("server", "service-url")
+        options.service_url = cfg.get("server", "service_url")
 
     share.settings.update({"max_process": cfg.getint("korel", "max_process")})
     share.settings.update({"max_memory": cfg.getint("korel", "max_memory")})
     share.settings.update({"max_disk_space": cfg.getint("korel", "max_disk_space")})
     share.settings.update({"max_upload_file": cfg.getint("korel", "max_upload_file") * 1024 * 1024})
     share.settings.update({"max_runtime": cfg.getint("korel", "max_runtime")})
+    share.settings.update({"service_url": options.service_url})
 
     os.environ.update({"KOREL_SERVICE_URL": options.service_url})
 

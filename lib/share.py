@@ -14,6 +14,13 @@ from lxml import etree
  
 KOREL_USERS_PATH = "./etc/users"
 KOREL_JOBS_PATH = "./jobs"
+XMLNS = """
+    xsi:schemaLocation="http://www.ivoa.net/xml/UWS/UWS-v1.0.xsd"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    xmlns:uws="http://www.ivoa.net/xml/UWS/v1.0rc3"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+"""
 
 parser = etree.XMLParser(remove_blank_text=True)
 settings = {}

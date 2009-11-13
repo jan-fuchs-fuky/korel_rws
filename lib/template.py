@@ -9,6 +9,14 @@ html_xsl = etree.parse("./xsl/html.xsl")
 html_transform = etree.XSLT(html_xsl)
 
 def xml2result(xml, user=""):
+    result = []
+    result.append('<?xml version="1.0" encoding="UTF-8"?>')
+    result.append('<?xml-stylesheet href="html.xsl" type="text/xsl"?>')
+    result.append(xml)
+
+    return "\n".join(result)
+    # END
+
     service_url = "'%s'" % os.getenv("KOREL_SERVICE_URL", default="https://127.0.0.1:8000")
 
     if (xml[0] == "<"):
