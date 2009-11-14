@@ -18,10 +18,10 @@
     <xsl:for-each select="uws:joblist/uws:job">
     <tr>
         <td><b><xsl:value-of select="uws:jobId"/></b></td>
-        <td><b><xsl:value-of select="uws:jobInfo/project"/></b></td>
-        <td><b><xsl:value-of select="uws:startTime"/></b></td>
-        <td><b><xsl:value-of select="uws:jobInfo/runningTime"/></b></td>
-        <td colspan="4"><b><xsl:value-of select="uws:phase"/></b></td>
+        <td><xsl:value-of select="uws:jobInfo/project"/></td>
+        <td><xsl:value-of select="uws:startTime"/></td>
+        <td><xsl:value-of select="uws:jobInfo/runningTime"/></td>
+        <td colspan="4"><xsl:value-of select="uws:phase"/></td>
     </tr>
     </xsl:for-each>
     

@@ -151,16 +151,6 @@ def process_archive(params, job_dir, tmp_dir):
     call(["mv", "%s/korel/korel.tmp" % tmp_dir, job_dir])
     call(["rm", "-rf", tmp_dir])
 
-def make_error(username, title, message):
-    error = []
-    error.append("<error>")
-    error.append("<ownerId>%s</ownerId>" % username)
-    error.append("<title>%s</title>" % title)
-    error.append("<message>%s</message>" % message)
-    error.append("</error>")
-
-    return "\n".join(error)
-
 def create(username, params, max_disk_space):
     error_title = "Create new job"
     input_files = False
@@ -173,15 +163,15 @@ def create(username, params, max_disk_space):
         input_files = True
 
     if (not input_files):
-        error = make_error(username, error_title, "Failure. Must upload files korel.dat and korel.par.")
+        error = share.make_error(username, error_title, "Failure. Must upload files korel.dat and korel.par.")
         return template.xml2result(error, "error")
 
     if (share.disk_usage(username) > max_disk_space):
-        error = make_error(username, error_title, "Failure. Disk quota exceeded.")
+        error = share.make_error(username, error_title, "Failure. Disk quota exceeded.")
         return template.xml2result(error, "error")
 
     if (int(cherrypy.request.headers["Content-length"]) > share.settings["max_upload_file"]):
-        error = make_error(username, error_title, "Failure. Upload file is large.")
+        error = share.make_error(username, error_title, "Failure. Upload file is large.")
         return template.xml2result(error, "error")
 
     id, job_dir = make_id_jobdir(username)
@@ -191,7 +181,7 @@ def create(username, params, max_disk_space):
             tmp_dir = os.tmpnam()
             process_archive(params, job_dir, tmp_dir)
         except Exception, e:
-            error = make_error(username, error_title, "Failure. Error when processing '%s'. %s" % (params["korel_archive"].filename, e))
+            error = share.make_error(username, error_title, "Failure. Error when processing '%s'. %s" % (params["korel_archive"].filename, e))
             call(["rm", "-rf", job_dir, tmp_dir])
             return template.xml2result(error, "error")
     else:

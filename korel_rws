@@ -1,24 +1,12 @@
 #!/usr/bin/env python2.5
 # -*- coding: utf-8 -*-
 
-""" Korel RESTful Web Services """
+""" Korel Universal Worker Service """
 
 #
 # Author: Jan Fuchs <fuky@sunstel.asu.cas.cz>
 # $Date$
 # $Rev$
-#
-
-#
-#    In CherryPy 3.1, cherrypy.engine can do all of the above via the
-#    Daemonizer plugin: 
-#
-#        from cherrypy.restsrv.plugins import Daemonizer, PIDFile 
-#        Daemonizer(cherrypy.engine).subscribe()
-#
-#    ...and manage pid files via: 
-#
-#        PIDFile(cherrypy.engine, filename).subscribe()
 #
 
 import os
@@ -211,22 +199,50 @@ def register_user(params):
 class RootServer:
     @cherrypy.expose
     def index(self):
-        return template.xml2result("./xml/index.xml")
+        username = ""
+
+        if (self.check_auth()):
+            username = cherrypy.request.cookie["KorelUserName"].value
+
+        return template.xml2result("<ownerId>%s</ownerId>" % username, "index")
 
     @cherrypy.expose
     def logout(self):
-        cookie = cherrypy.response.cookie
-        cookie["KorelLogout"] = "true"
+        cookie = cherrypy.request.cookie
+        cookie_response = cherrypy.response.cookie
 
-        cherrypy.response.headers["www-authenticate"] = httpauth.basicAuth("Korel RESTful Web Services") 
-        raise cherrypy.HTTPError(401, "You are not authorized to access that resource") 
+        if (cookie.has_key("KorelUserName") and cookie.has_key("KorelAuthorizationKey")):
+            cookie_response["KorelUserName"] = ""
+            cookie_response["KorelUserName"]["expires"] = 0
+            cookie_response["KorelAuthorizationKey"] = ""
+            cookie_response["KorelAuthorizationKey"]["expires"] = 0
+
+            filename = self.make_auth_filename(cookie["KorelUserName"].value, cookie["KorelAuthorizationKey"].value)
+            if (os.path.isfile(filename)):
+                os.remove(filename)
+
+        raise cherrypy.HTTPRedirect(["/"])
 
     @cherrypy.expose
-    def login(self):
-        cookie = cherrypy.response.cookie
-        cookie["KorelLogout"] = "false"
+    def login(self, *vpath, **params):
+        if (params.has_key("username") and params.has_key("password")):
+            if (self.check_password(params["username"], params["password"])):
+                authorization_key = uuid.uuid4()
+                cookie = cherrypy.response.cookie
+                cookie["KorelUserName"] = params["username"]
+                cookie["KorelAuthorizationKey"] = authorization_key
+                filename = self.make_auth_filename(params["username"], authorization_key)
 
-        raise cherrypy.HTTPRedirect(["/jobs"], 303)
+                fo = open(filename, "w")
+                fo.write("%i\n" % time.time())
+                fo.close()
+
+                raise cherrypy.HTTPRedirect(["/jobs"])
+            else:
+                error = share.make_error("", "Login", "Failure. Bad username or password.")
+                return template.xml2result(error, "error")
+        else:
+            return template.xml2result("<login>true</login>", "login")
 
     @cherrypy.expose
     def user(self, *vpath, **params):
@@ -341,8 +357,7 @@ class RootServer:
             http_method = getattr(self, method)
             return (http_method)(params)
         else:
-            cherrypy.response.headers["www-authenticate"] = httpauth.basicAuth("Korel RESTful Web Services") 
-            raise cherrypy.HTTPError(401, "You are not authorized to access that resource") 
+            raise cherrypy.HTTPRedirect(["/login"])
 
     def GET(self, params):
         if (not params.has_key("id")):
@@ -401,14 +416,21 @@ class RootServer:
     def PUT(self, params):
         raise cherrypy.HTTPError(400, "Bad Request")
 
-    def check_auth(self): 
-        try: 
-            auth = httpauth.parseAuthorization(cherrypy.request.headers['authorization']) 
-        except KeyError: 
-            return False 
+    def make_auth_filename(self, username, authorization):
+        return "%s/var/authorization/%s-%s" % (script_path, username, authorization)
 
-        self.username = auth['username'] 
-        self.password = auth['password'] 
+    def check_auth(self):
+        cookie = cherrypy.request.cookie
+
+        if (cookie.has_key("KorelUserName") and cookie.has_key("KorelAuthorizationKey")):
+            filename = self.make_auth_filename(cookie["KorelUserName"].value, cookie["KorelAuthorizationKey"].value)
+            if (os.path.isfile(filename)):
+                return True
+
+        return False
+
+    def check_password(self, username, password): 
+        self.username = username
         self.email = ""
         user_xml = "%s/%s.xml" % (USERS_PATH, self.username)
 
@@ -423,7 +445,7 @@ class RootServer:
 
             salt = hashed_password[:hashed_password.rfind("$")+23]
 
-            if (bcrypt.hashpw(self.password, salt) != hashed_password):
+            if (bcrypt.hashpw(password, salt) != hashed_password):
                 return False
 
             if (not self.user_settings.has_key("max_disk_space")):
@@ -439,7 +461,7 @@ class RootServer:
                 return False
         else: 
             self.username = ""
-            self.password = ""
+            password = ""
             return False 
 
 def handle_error():
