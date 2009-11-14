@@ -130,12 +130,8 @@ def action_confirmation(confirmation):
 
         os.remove(confirmation_file)
         
-        result  = "<body><![CDATA["
-        result += "<h2>Register user</h2>"
-        result += "Welcome <b>%s</b>, registration is success." % login
-        result += "]]></body>"
-
-        return template.xml2result(result)
+        result = share.make_message("Register user", "Welcome %s, registration is success." % login)
+        return template.xml2result(result, "message")
     else:
         raise cherrypy.HTTPError(400, "Bad Request")
 
@@ -239,8 +235,8 @@ class RootServer:
 
                 raise cherrypy.HTTPRedirect(["/jobs"])
             else:
-                error = share.make_error("", "Login", "Failure. Bad username or password.")
-                return template.xml2result(error, "error")
+                error = share.make_message("Login", "Failure. Bad username or password.", "error")
+                return template.xml2result(error, "message")
         else:
             return template.xml2result("<login>true</login>", "login")
 
@@ -290,22 +286,18 @@ class RootServer:
             if (not errmsg):
                 confirmation = make_confirmation(params["login"])
 
-                body  = "Please confirm you registration on Korel RESTful Web Services:\n\n"
-                body += "https://stelweb.asu.cas.cz/vo-korel/user/confirm/%s\n\n" % confirmation
-                body += "First name: %s\n" % params["first_name"]
-                body += "Surname: %s\n" % params["surname"]
-                body += "Organization: %s\n" % params["organization"]
-                body += "Login: %s\n" % params["login"]
-                body += "Password: %s\n" % params["password"]
-                body += "E-mail: %s\n" % params["email"]
+                body = []
+                body.append("Please confirm you registration on Korel RESTful Web Services:\n\n")
+                body.append("https://stelweb.asu.cas.cz/vo-korel/user/confirm/%s\n\n" % confirmation)
+                body.append("First name: %s\n" % params["first_name"])
+                body.append("Surname: %s\n" % params["surname"])
+                body.append("Organization: %s\n" % params["organization"])
+                body.append("Login: %s\n" % params["login"])
+                body.append("Password: %s\n" % params["password"])
+                body.append("E-mail: %s\n" % params["email"])
 
-                send_mail(params["email"], "Korel RESTful Web Service: Register user", body, options)
+                send_mail(params["email"], "Korel RESTful Web Service: Register user", "".join(body), options)
                 errmsg = register_user(params)
-
-                result  = "<body><![CDATA["
-                result += "<h2>Register user</h2>"
-                result += "Please confirm registration on your e-mail address."
-                result += "]]></body>"
 
             if (errmsg != ""):
                 for key in params.keys():
@@ -315,20 +307,22 @@ class RootServer:
                 params.update({"errmsg": errmsg})
                 raise cherrypy.HTTPRedirect(["/user/register?%s" % urllib.urlencode(params)], 303)
 
-            return template.xml2result(result)
+            result = share.make_message("Register user", "Please confirm registration on your e-mail address.")
+            return template.xml2result(result, "message")
         elif ((method == "GET") and (what == "register")):
             mathproblem_png = make_mathproblem()
 
-            result  = "<register_user>"
-            result += "<mathproblem_png>%s</mathproblem_png>" % mathproblem_png
+            result = []
+            result.append("<register>")
+            result.append("<mathproblem_png>%s</mathproblem_png>" % mathproblem_png)
 
             if (params != {}):
                 for key in params:
-                    result += "<%s>%s</%s>" % (key, params[key], key)
+                    result.append("<%s>%s</%s>" % (key, params[key], key))
 
-            result += "</register_user>"
+            result.append("</register>")
 
-            return template.xml2result(result)
+            return template.xml2result("\n".join(result), "register")
         elif ((method == "GET") and (what == "confirm")):
             return action_confirmation(vpath[1])
         else:
@@ -366,7 +360,7 @@ class RootServer:
             if (params["what"] == "phase"):
                 return jobs.phase(self.username, params["id"])
             elif (params["what"] == "again"):
-                return jobs.again(self.username, self.email, params["id"])
+                return jobs.again(self.username, self.user_settings["email"], params["id"])
             elif (params["what"] == "results"):
                 if (params.has_key("file")):
                     return jobs.download(self.username, params["id"], params["file"])
@@ -389,7 +383,7 @@ class RootServer:
                 result = []
                 result.append("<creatingjob>")
                 result.append("<ownerId>%s</ownerId>" % self.username)
-                result.append("<email>%s</email>" % self.email)
+                result.append("<email>%s</email>" % self.user_settings["email"])
                 result.append("</creatingjob>")
                 return template.xml2result("\n".join(result), "creatingjob")
             return jobs.create(self.username, params, self.user_settings["max_disk_space"])
@@ -423,34 +417,38 @@ class RootServer:
         cookie = cherrypy.request.cookie
 
         if (cookie.has_key("KorelUserName") and cookie.has_key("KorelAuthorizationKey")):
-            filename = self.make_auth_filename(cookie["KorelUserName"].value, cookie["KorelAuthorizationKey"].value)
-            if (os.path.isfile(filename)):
-                return True
+            self.username = cookie["KorelUserName"].value
+            filename = self.make_auth_filename(self.username, cookie["KorelAuthorizationKey"].value)
+            if (os.path.isfile(filename)) and (self.make_user_settings()):
+                    return True
 
         return False
 
+    def make_user_settings(self):
+        self.user_settings = share.get_user_settings("%s/%s.xml" % (share.KOREL_USERS_PATH, self.username))
+
+        if (self.user_settings["attrib"].has_key("allow")) and (self.user_settings["attrib"]["allow"] != "true"):
+            return False
+
+        if (not self.user_settings.has_key("max_disk_space")):
+            self.user_settings.update({"max_disk_space": share.settings["max_disk_space"]})
+
+        self.user_settings["max_disk_space"] *= (1024 * 1024)
+        return True
+
     def check_password(self, username, password): 
         self.username = username
-        self.email = ""
         user_xml = "%s/%s.xml" % (USERS_PATH, self.username)
 
         if (os.path.isfile(user_xml)):
-            self.user_settings = share.get_user_settings("%s/%s.xml" % (share.KOREL_USERS_PATH, self.username))
-
-            if (self.user_settings["attrib"].has_key("allow")) and (self.user_settings["attrib"]["allow"] != "true"):
+            if (not self.make_user_settings()):
                 return False
 
-            self.email = self.user_settings["email"]
-            hashed_password = self.user_settings["hashed_password"]
+            hp = self.user_settings["hashed_password"]
+            salt = hp[:hp.rfind("$")+23]
 
-            salt = hashed_password[:hashed_password.rfind("$")+23]
-
-            if (bcrypt.hashpw(password, salt) != hashed_password):
+            if (bcrypt.hashpw(password, salt) != hp):
                 return False
-
-            if (not self.user_settings.has_key("max_disk_space")):
-                self.user_settings.update({"max_disk_space": share.settings["max_disk_space"]})
-            self.user_settings["max_disk_space"] *= (1024 * 1024)
 
             try:
                 home = "%s/%s" % (jobs.JOBS_PATH, self.username)
@@ -461,18 +459,12 @@ class RootServer:
                 return False
         else: 
             self.username = ""
-            password = ""
             return False 
 
 def handle_error():
     cherrypy.response.status = 500
-
-    result  = "<body><![CDATA["
-    result += "<h2>Error</h2>"
-    result += "Sorry, an error occurred."
-    result += "]]></body>"
-
-    cherrypy.response.body = [ template.xml2result(result) ]
+    error = share.make_message("Error", "Sorry, an error occurred.", "error")
+    cherrypy.response.body = [ template.xml2result(error, "message") ]
     send_mail("fuky@fuky.org", "Error in Korel RESTful Web Service", _cperror.format_exc(), options)
 
 #

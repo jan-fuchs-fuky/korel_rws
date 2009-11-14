@@ -117,12 +117,13 @@ def create_pid(filename):
     except:
         sys.exit(1)
 
-def make_error(username, title, message):
+def make_message(title, text, type="", username=""):
     error = []
-    error.append("<error>")
+    error.append("<message>")
     error.append("<ownerId>%s</ownerId>" % username)
     error.append("<title>%s</title>" % title)
-    error.append("<message>%s</message>" % message)
-    error.append("</error>")
+    error.append("<text>%s</text>" % text)
+    error.append("<type>%s</type>" % type)
+    error.append("</message>")
 
     return "\n".join(error)

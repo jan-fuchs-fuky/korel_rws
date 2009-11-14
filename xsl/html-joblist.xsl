@@ -31,7 +31,7 @@
 
 <xsl:template match="/">
     <xsl:call-template name="html.static">
-        <xsl:with-param name="ownerId" select="uws:joblist/uws:job/uws:ownerId"/>
+        <xsl:with-param name="ownerId" select="uws:joblist/uws:ownerId"/>
     </xsl:call-template>
 </xsl:template>
 

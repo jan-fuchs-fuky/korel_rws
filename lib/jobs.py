@@ -163,16 +163,16 @@ def create(username, params, max_disk_space):
         input_files = True
 
     if (not input_files):
-        error = share.make_error(username, error_title, "Failure. Must upload files korel.dat and korel.par.")
-        return template.xml2result(error, "error")
+        error = share.make_message(error_title, "Failure. Must upload files korel.dat and korel.par.", "error", username)
+        return template.xml2result(error, "message")
 
     if (share.disk_usage(username) > max_disk_space):
-        error = share.make_error(username, error_title, "Failure. Disk quota exceeded.")
-        return template.xml2result(error, "error")
+        error = share.make_message(error_title, "Failure. Disk quota exceeded.", "error", username)
+        return template.xml2result(error, "message")
 
     if (int(cherrypy.request.headers["Content-length"]) > share.settings["max_upload_file"]):
-        error = share.make_error(username, error_title, "Failure. Upload file is large.")
-        return template.xml2result(error, "error")
+        error = share.make_message(error_title, "Failure. Upload file is large.", "error", username)
+        return template.xml2result(error, "message")
 
     id, job_dir = make_id_jobdir(username)
 
@@ -181,9 +181,11 @@ def create(username, params, max_disk_space):
             tmp_dir = os.tmpnam()
             process_archive(params, job_dir, tmp_dir)
         except Exception, e:
-            error = share.make_error(username, error_title, "Failure. Error when processing '%s'. %s" % (params["korel_archive"].filename, e))
+            error = share.make_message(error_title, \
+                    "Failure. Error when processing '%s'. %s" % (params["korel_archive"].filename, e), \
+                    "error", username)
             call(["rm", "-rf", job_dir, tmp_dir])
-            return template.xml2result(error, "error")
+            return template.xml2result(error, "message")
     else:
         save_upload_file(params["korel_dat"], "%s/korel.dat" % job_dir)
         save_upload_file(params["korel_par"], "%s/korel.par" % job_dir, xml=True)
@@ -381,6 +383,7 @@ def list(username, max_disk_space):
 
     result = []
     result.append("<uws:joblist %s>" % share.XMLNS)
+    result.append('<uws:ownerId>%s</uws:ownerId>' % username)
     # sort key dir by value mtime
     for item in sorted(dirs_dict.iteritems(), key=lambda (k,v): (v,k), reverse=True):
         id = item[0]
