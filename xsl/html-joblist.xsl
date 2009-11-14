@@ -2,7 +2,7 @@
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 <xsl:include href="html-common.xsl"/>
 
-<xsl:template match="/">
+<xsl:template name="html.dynamic">
 <table>
 <tr>
     <td><b>ID</b></td>
@@ -23,6 +23,11 @@
 </xsl:for-each>
 
 </table>
+</xsl:template>
+
+
+<xsl:template match="/">
+    <xsl:call-template name="html.static"/>
 </xsl:template>
 
 </xsl:stylesheet>

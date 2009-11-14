@@ -2,8 +2,11 @@
 
 import os
 import cherrypy
+
 from lxml import etree
 from StringIO import StringIO
+
+import share
 
 html_xsl = etree.parse("./xsl/html.xsl")
 html_transform = etree.XSLT(html_xsl)
@@ -11,9 +14,10 @@ html_transform = etree.XSLT(html_xsl)
 def xml2result(xml, user=""):
     result = []
     result.append('<?xml version="1.0" encoding="UTF-8"?>')
-    result.append('<?xml-stylesheet href="html.xsl" type="text/xsl"?>')
+    result.append('<?xml-stylesheet href="%s/xsl/html-joblist.xsl" type="text/xsl"?>' % share.settings["service_url"])
     result.append(xml)
 
+    cherrypy.response.headers['Content-Type'] = "text/xml"
     return "\n".join(result)
     # END
 

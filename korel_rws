@@ -332,6 +332,11 @@ class RootServer:
         return serve_file(file_path)
 
     @cherrypy.expose
+    def xsl(self, file):
+        file_path = os.path.abspath("./xsl/%s" % file)
+        return serve_file(file_path)
+
+    @cherrypy.expose
     def jobs(self, *vpath, **params):
         vpath_des = ["id", "what", "file"]
 
