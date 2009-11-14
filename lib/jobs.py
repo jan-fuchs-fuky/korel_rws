@@ -151,9 +151,18 @@ def process_archive(params, job_dir, tmp_dir):
     call(["mv", "%s/korel/korel.tmp" % tmp_dir, job_dir])
     call(["rm", "-rf", tmp_dir])
 
-def start(username, params, max_disk_space):
-    errmsg = "<body><![CDATA[<h2>Start new job</h2>%s]]></body>"
+def make_error(username, title, message):
+    error = []
+    error.append("<error>")
+    error.append("<ownerId>%s</ownerId>" % username)
+    error.append("<title>%s</title>" % title)
+    error.append("<message>%s</message>" % message)
+    error.append("</error>")
 
+    return "\n".join(error)
+
+def create(username, params, max_disk_space):
+    error_title = "Create new job"
     input_files = False
     archive = False
 
@@ -164,16 +173,16 @@ def start(username, params, max_disk_space):
         input_files = True
 
     if (not input_files):
-        errmsg = errmsg %  "Failure. Must upload files korel.dat and korel.par."
-        return template.xml2result(errmsg, username)
+        error = make_error(username, error_title, "Failure. Must upload files korel.dat and korel.par.")
+        return template.xml2result(error, "error")
 
     if (share.disk_usage(username) > max_disk_space):
-        errmsg = errmsg % "Failure. Disk quota exceeded."
-        return template.xml2result(errmsg, username)
+        error = make_error(username, error_title, "Failure. Disk quota exceeded.")
+        return template.xml2result(error, "error")
 
     if (int(cherrypy.request.headers["Content-length"]) > share.settings["max_upload_file"]):
-        errmsg = errmsg % "Failure. Upload file is large."
-        return template.xml2result(errmsg, username)
+        error = make_error(username, error_title, "Failure. Upload file is large.")
+        return template.xml2result(error, "error")
 
     id, job_dir = make_id_jobdir(username)
 
@@ -182,19 +191,22 @@ def start(username, params, max_disk_space):
             tmp_dir = os.tmpnam()
             process_archive(params, job_dir, tmp_dir)
         except Exception, e:
-            errmsg = errmsg % ("Failure. Error when processing '%s'. %s" % (params["korel_archive"].filename, e))
+            error = make_error(username, error_title, "Failure. Error when processing '%s'. %s" % (params["korel_archive"].filename, e))
             call(["rm", "-rf", job_dir, tmp_dir])
-            return template.xml2result(errmsg, username)
+            return template.xml2result(error, "error")
     else:
         save_upload_file(params["korel_dat"], "%s/korel.dat" % job_dir)
         save_upload_file(params["korel_par"], "%s/korel.par" % job_dir, xml=True)
         save_upload_file(params["korel_tmp"], "%s/korel.tmp" % job_dir)
 
-    save2file("%s/project" % job_dir, params["project"])
-    save2file("%s/comment" % job_dir, params["comment"])
+    save2file("%s/.project" % job_dir, params["project"])
+    save2file("%s/.comment" % job_dir, params["comment"])
+    save2file("%s/.phase" % job_dir, "PENDING")
+    save2file("%s/.executionDuration" % job_dir, "3000")
+    save2file("%s/.destruction" % job_dir, "8600")
 
-    if (params.has_key("mailing")):
-        save2file("%s/mailing" % job_dir, params["email"])
+    if (params.has_key(".mailing")):
+        save2file("%s/.mailing" % job_dir, params["email"])
 
     raise cherrypy.HTTPRedirect(["/jobs/%i" % id], 303)
 
@@ -254,8 +266,8 @@ def againstart(username, params, environ, max_disk_space):
     save2file("%s/project" % job_dir, params["project"])
     save2file("%s/comment" % job_dir, params["comment"])
 
-    if (params.has_key("mailing")):
-        save2file("%s/mailing" % job_dir, params["email"])
+    if (params.has_key(".mailing")):
+        save2file("%s/.mailing" % job_dir, params["email"])
 
     start_korel(job_dir, environ)
 
@@ -320,7 +332,7 @@ def human_time(seconds, spare=0):
 
 def format_time(seconds):
     if (seconds):
-        return time.strftime("%Y-%m-%dT%H:%M:%S", int(seconds))
+        return time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(int(seconds)))
     else:
         return ""
 
@@ -421,11 +433,11 @@ def list(username, max_disk_space):
 
     result.append("</uws:joblist>")
 
-    return template.xml2result("\n".join(result), username)
+    return template.xml2result("\n".join(result), "joblist")
 
 def get_phase(job_dir):
     returncode_txt = "%s/returncode.txt" % job_dir
-    time_begin = "%s/time_begin" % job_dir
+    startTime = "%s/startTime" % job_dir
     phase_path = "%s/phase" % job_dir
 
     phase = ""
@@ -447,7 +459,7 @@ def get_phase(job_dir):
             return "COMPLETED"
         else:
             return "ERROR"
-    elif (os.path.isfile(time_begin)):
+    elif (os.path.isfile(startTime)):
         return "EXECUTING"
     elif (phase):
         return phase
@@ -457,7 +469,6 @@ def get_phase(job_dir):
 def results(username, id):
     job_dir = get_job_dir(username, id)
     phase_value = get_phase(job_dir)
-    hidden_files = ["korel.pid", "returncode.txt", "comment", "project", "time_begin", "time_end", "grant", "phase"]
 
     result = "<result>\n"
     result += "<id>%s</id>\n" % id
@@ -470,7 +481,7 @@ def results(username, id):
                 result += "<component>%s</component>\n" % file
 
             # skip hidden and other file
-            if ((file[0] == ".") or (file in hidden_files) or (file[-4:] == ".png")):
+            if ((file[0] == ".") or (file[-4:] == ".png")):
                 continue
 
             stat = os.stat("%s/%s" % (root, file))
@@ -510,37 +521,61 @@ def phase(username, id):
     phase_value = get_phase(job_dir)
     result = []
 
-    if ((cherrypy.request.wsgi_environ["HTTP_ACCEPT"]) == "application/xml"):
-        result.append('<uws:phase xmlns:uws="http://www.ivoa.net/xml/UWS/v0.9.2">')
-        result.append(phase_value)
-        result.append('</uws:phase>')
-        return template.xml2result("".join(result))
-    elif (phase_value not in ["EXECUTING", "PREPARING"]):
+    #if ((cherrypy.request.wsgi_environ["HTTP_ACCEPT"]) == "application/xml"):
+    #    return template.xml2result("".join(result))
+    if (phase_value not in ["EXECUTING", "PENDING"]):
         raise cherrypy.HTTPRedirect(["/jobs/%s/results" % id], 303)
 
-    result.append("<phase>\n")
-    result.append("<id>%s</id>\n" % id)
-    result.append("<phase>%s</phase>\n" % phase_value)
-    result.append("</phase>\n")
-    return template.xml2result("".join(result), username)
+    result.append('<phase>')
+    result.append('<ownerId>%s</ownerId>' % username)
+    result.append('<value>%s</value>' % phase_value)
+    result.append('</phase>')
+
+    return template.xml2result("\n".join(result), "phase")
 
 def detail(username, id):
     job_dir = get_job_dir(username, id)
+    info = get_info(job_dir)
+
+    runningTime = ""
+    if (info["endTime"] and info["startTime"]):
+        runningTime = human_time(info["endTime"], info["startTime"])
+    elif (info["startTime"]):
+        runningTime = human_time(time.time(), info["startTime"])
 
     result = []
-    result.append("<detail>\n")
-    result.append("<id>%s</id>\n" % id)
-    result.append("<phase>%s</phase>\n" % get_phase(job_dir))
-    result.append("</detail>\n")
+    result.append('<uws:job %s>' % share.XMLNS)
+    result.append('<uws:jobId>%s</uws:jobId>"' % id)
+    result.append('<uws:ownerId>%s</uws:ownerId>' % username)
+    result.append('<uws:phase>%s</uws:phase>' % get_phase(job_dir))
+    result.append('<uws:startTime>%s</uws:startTime>' % format_time(info["startTime"]))
+    result.append('<uws:endTime>%s</uws:endTime>' % format_time(info["endTime"]))
+    result.append('<uws:executionDuration>%s</uws:executionDuration>' % info["executionDuration"])
+    result.append('<uws:destruction>%s</uws:destruction>' % format_time(info["destruction"]))
+    result.append('<uws:parameters>')
+    result.append('<uws:parameter id="korel.dat" byReference="true">%s</uws:parameter>' % get_param(id, "korel.dat"))
+    result.append('<uws:parameter id="korel.par" byReference="true">%s</uws:parameter>' % get_param(id, "korel.par"))
+    result.append('<uws:parameter id="korel.tmp" byReference="true">%s</uws:parameter>' % get_param(id, "korel.tmp"))
+    result.append('</uws:parameters>')
+    result.append('<uws:errorSummary type="transient">')
+    result.append('<uws:message>we have problem</uws:message>')
+    result.append('<uws:detail xlink:href="http://myserver.org/uws/jobs/jobid123/error"/>')
+    result.append('</uws:errorSummary>')
+    result.append('<uws:jobInfo>')
+    result.append('<comment>%s</comment>' % info["comment"])
+    result.append('<project>%s</project>' % info["project"])
+    result.append('<runningTime>%s</runningTime>' % runningTime)
+    result.append('</uws:jobInfo>')
+    result.append('</uws:job>')
 
-    return template.xml2result("".join(result), username)
+    return template.xml2result("\n".join(result), "job")
 
 def destruction(username, id):
     job_dir = get_job_dir(username, id)
 
-    time_end = "%s/time_end" % job_dir
-    if (os.path.isfile(time_end)):
-        fo = open(time_end, "r")
+    endTime = "%s/endTime" % job_dir
+    if (os.path.isfile(endTime)):
+        fo = open(endTime, "r")
         destruction_time = time.gmtime(int(fo.readline().strip()) + (3600*24*30))
         fo.close()
     else:

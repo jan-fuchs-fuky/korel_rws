@@ -92,11 +92,11 @@ class KorelScheduler():
         else:
             max_runtime = self.settings.max_runtime
 
-        fo = open("%s/time_begin" % job_dir_path, "r")
-        time_begin = int(fo.readline().strip())
+        fo = open("%s/startTime" % job_dir_path, "r")
+        startTime = int(fo.readline().strip())
         fo.close()
 
-        if (time.time() - time_begin) > (max_runtime * 60):
+        if (time.time() - startTime) > (max_runtime * 60):
             self.logger.info("%s kill %i" % (job_dir_path, pid))
             os.system("./korel_kill %i &" % pid)
 

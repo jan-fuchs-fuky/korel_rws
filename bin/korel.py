@@ -51,7 +51,7 @@ def main():
     os.write(fd, "%i\n" % korel_pipe.pid)
     os.close(fd)
 
-    fo = open("time_begin", "w")
+    fo = open(".startTime", "w")
     fo.write("%i\n" % time.time())
     fo.close()
 
@@ -60,7 +60,7 @@ def main():
         result = korel_pipe.poll()
         time.sleep(1)
 
-    fo = open("time_end", "w")
+    fo = open(".endTime", "w")
     fo.write("%i\n" % time.time())
     fo.close()
 
@@ -80,8 +80,8 @@ def main():
     result_tgz = "../%s.tgz" % pid
     call(["tar", "zcf", result_tgz, "../%s" % pid])
 
-    if (os.path.isfile("mailing")):
-        fo = open("mailing", "r")
+    if (os.path.isfile(".mailing")):
+        fo = open(".mailing", "r")
         email_to = fo.read(1024).strip()
         fo.close()
 

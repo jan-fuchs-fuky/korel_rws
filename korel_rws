@@ -327,16 +327,6 @@ class RootServer:
         return serve_file(file_path)
 
     @cherrypy.expose
-    def css(self, file):
-        file_path = os.path.abspath("./css/%s" % file)
-        return serve_file(file_path)
-
-    @cherrypy.expose
-    def xsl(self, file):
-        file_path = os.path.abspath("./xsl/%s" % file)
-        return serve_file(file_path)
-
-    @cherrypy.expose
     def jobs(self, *vpath, **params):
         vpath_des = ["id", "what", "file"]
 
@@ -381,9 +371,13 @@ class RootServer:
     def POST(self, params):
         if (not params.has_key("id")):
             if (not params.has_key("korel_dat")) or (not params.has_key("korel_archive")):
-                result  = "<start_new_job><email>%s</email></start_new_job>" % self.email
-                return template.xml2result(result, self.username)
-            return jobs.start(self.username, params, self.user_settings["max_disk_space"])
+                result = []
+                result.append("<creatingjob>")
+                result.append("<ownerId>%s</ownerId>" % self.username)
+                result.append("<email>%s</email>" % self.email)
+                result.append("</creatingjob>")
+                return template.xml2result("\n".join(result), "creatingjob")
+            return jobs.create(self.username, params, self.user_settings["max_disk_space"])
         elif (params.has_key("what")):
             if (params["what"] == "againstart"):
                 return jobs.againstart(self.username, params, environ, self.user_settings["max_disk_space"])
@@ -489,9 +483,23 @@ def main():
             'server.ssl_certificate': 'cert.pem',
             'server.ssl_private_key': 'key.pem',
             'request.error_response': handle_error,
-            'error_page.404': "error/404.html",
-            'error_page.401': "error/401.html"
-        }
+            'error_page.404': 'error/404.html',
+            'error_page.401': 'error/401.html',
+        },
+
+        '/': {
+            'tools.staticdir.root': script_path
+        },
+
+        '/xsl': {
+            'tools.staticdir.on': True,
+            'tools.staticdir.dir': 'xsl',
+        },
+
+        '/css': {
+            'tools.staticdir.on': True,
+            'tools.staticdir.dir': 'css',
+        },
     } 
  
     cherrypy.quickstart(RootServer(), '/', config=config)
