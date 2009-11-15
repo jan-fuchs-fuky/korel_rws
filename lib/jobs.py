@@ -206,7 +206,7 @@ def run(username, id, environ):
     job_dir = get_job_dir(username, id)
     start_korel(job_dir, environ)
 
-    fo = open("%s/phase" % job_dir, "w")
+    fo = open("%s/.phase" % job_dir, "w")
     fo.write("QUEUED\n")
     fo.close()
 
@@ -224,10 +224,15 @@ def again(username, email, id):
         #if (call(["cp", korel_dat, new_job_dir]) != 0):
         #    raise Exception("Copy korel.dat failure")
 
+        fo = open("%s/.phase" % new_job_dir, "w")
+        fo.write("PENDING\n")
+        fo.close()
+
         os.link(korel_dat, "%s/korel.dat" % new_job_dir)
 
         result = []
         result.append("<again>")
+        result.append("<ownerId>%s</ownerId>" % username)
         result.append("<id>%s</id>" % id)
         result.append("<project>%s</project>" % get_file(project))
         result.append("<new_id>%s</new_id>" % new_id)
@@ -239,15 +244,15 @@ def again(username, email, id):
 
         result.append("</again>")
 
-        return template.xml2result("".join(result), username)
+        return template.xml2result("\n".join(result), "again")
     except Exception, e:
         call(["rm", "-rf", new_job_dir])
         raise Exception(e)
 
 def againstart(username, params, environ, max_disk_space):
     if (share.disk_usage(username) > max_disk_space):
-        errmsg = "<body><![CDATA[<h2>Start new job</h2>Failure. Disk quota exceeded.]]></body>"
-        return template.xml2result(errmsg, username)
+        error = share.make_message("Start new job", "Failure. Disk quota exceeded.", "error", username)
+        return template.xml2result(error, "message")
 
     job_dir = get_job_dir(username, params["id"])
 
@@ -428,50 +433,24 @@ def list(username, max_disk_space):
 
     return template.xml2result("\n".join(result), "joblist")
 
-def get_phase(job_dir):
-    returncode_txt = "%s/returncode.txt" % job_dir
-    startTime = "%s/startTime" % job_dir
-    phase_path = "%s/phase" % job_dir
-
-    phase = ""
-    if (os.path.isfile(phase_path)):
-        fo = open(phase_path, "r")
-        phase = fo.readline().strip()
-        fo.close()
-
-    if (phase == "ABORTED"):
-        return phase
-    elif (os.path.isfile("%s/traceback" % job_dir)):
-        return "ERROR"
-    elif (os.path.isfile(returncode_txt)):
-        file = open(returncode_txt, "r")
-        rc = int(file.read().strip())
-        file.close()
-
-        if (rc == 0):
-            return "COMPLETED"
-        else:
-            return "ERROR"
-    elif (os.path.isfile(startTime)):
-        return "EXECUTING"
-    elif (phase):
-        return phase
-    else:
-        return "PENDING"
-
 def results(username, id):
     job_dir = get_job_dir(username, id)
-    phase_value = get_phase(job_dir)
 
-    result = "<result>\n"
-    result += "<id>%s</id>\n" % id
-    result += "<phase>%s</phase>\n" % phase_value
+    fo = open("%s/.phase" % job_dir, "r")
+    phase_value = fo.readline().strip()
+    fo.close()
+
+    result = []
+    result.append("<result>")
+    result.append('<ownerId>%s</ownerId>' % username)
+    result.append("<id>%s</id>" % id)
+    result.append("<phase>%s</phase>" % phase_value)
 
     if (phase_value != "EXECUTING"):
         root, dirs, files = os.walk(job_dir).next()
         for file in files:
             if (file.find("component") == 0):
-                result += "<component>%s</component>\n" % file
+                result.append("<component>%s</component>" % file)
 
             # skip hidden and other file
             if ((file[0] == ".") or (file[-4:] == ".png")):
@@ -494,11 +473,11 @@ def results(username, id):
             else:
                 type = ""
 
-            result += '<link size="%s" type="%s">%s</link>\n' % (size, type, file)
+            result.append('<link size="%s" type="%s">%s</link>' % (size, type, file))
 
-    result += "</result>\n"
+    result.append("</result>")
 
-    return template.xml2result(result, username)
+    return template.xml2result("\n".join(result), "results")
 
 def download(username, id, file):
     job_dir = get_job_dir(username, id)
@@ -511,7 +490,11 @@ def download(username, id, file):
 
 def phase(username, id):
     job_dir = get_job_dir(username, id)
-    phase_value = get_phase(job_dir)
+
+    fo = open("%s/.phase" % job_dir, "r")
+    phase_value = fo.readline().strip()
+    fo.close()
+
     result = []
 
     #if ((cherrypy.request.wsgi_environ["HTTP_ACCEPT"]) == "application/xml"):
@@ -536,11 +519,15 @@ def detail(username, id):
     elif (info["startTime"]):
         runningTime = human_time(time.time(), info["startTime"])
 
+    fo = open("%s/.phase" % job_dir, "r")
+    phase_value = fo.readline().strip()
+    fo.close()
+
     result = []
     result.append('<uws:job %s>' % share.XMLNS)
     result.append('<uws:jobId>%s</uws:jobId>"' % id)
     result.append('<uws:ownerId>%s</uws:ownerId>' % username)
-    result.append('<uws:phase>%s</uws:phase>' % get_phase(job_dir))
+    result.append('<uws:phase>%s</uws:phase>' % phase_value)
     result.append('<uws:startTime>%s</uws:startTime>' % format_time(info["startTime"]))
     result.append('<uws:endTime>%s</uws:endTime>' % format_time(info["endTime"]))
     result.append('<uws:executionDuration>%s</uws:executionDuration>' % info["executionDuration"])
@@ -575,10 +562,11 @@ def destruction(username, id):
         destruction_time = time.gmtime(time.time() + (3600*24*30))
 
     result = []
-    result.append('<uws:destruction xmlns:uws="http://www.ivoa.net/xml/UWS/v0.9.2">')
-    result.append(time.strftime("%Y-%m-%dT%H:%M:%S", destruction_time))
-    result.append('</uws:destruction>')
-    return template.xml2result("".join(result))
+    result.append('<destruction>')
+    result.append('<ownerId>%s</ownerId>' % username)
+    result.append('<value>%s</value>' % time.strftime("%Y-%m-%dT%H:%M:%S", destruction_time))
+    result.append('</destruction>')
+    return template.xml2result("\n".join(result), "destruction")
 
 def params():
     pass

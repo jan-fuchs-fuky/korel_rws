@@ -55,6 +55,10 @@ def main():
     fo.write("%i\n" % time.time())
     fo.close()
 
+    fo = open(".phase", "w")
+    fo.write("EXECUTING\n")
+    fo.close()
+
     result = None
     while (result is None):
         result = korel_pipe.poll()
@@ -62,6 +66,15 @@ def main():
 
     fo = open(".endTime", "w")
     fo.write("%i\n" % time.time())
+    fo.close()
+
+    if (result == 0):
+        phase = "COMPLETED"
+    else:
+        phase = "ERROR"
+
+    fo = open(".phase", "w")
+    fo.write("%s\n" % phase)
     fo.close()
 
     if (result == 0):

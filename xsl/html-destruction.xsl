@@ -6,15 +6,14 @@
 
 
 <xsl:template name="html.dynamic">
-    <h2>Phase</h2>
-    <xsl:value-of select="/phase/value"/>
+    <h2>Destruction</h2>
+    <xsl:value-of select="/destruction/value"/>
 </xsl:template>
 
 
 <xsl:template match="/">
     <xsl:call-template name="html.static">
-        <xsl:with-param name="ownerId" select="phase/ownerId"/>
-        <xsl:with-param name="refresh" select="'true'"/>
+        <xsl:with-param name="ownerId" select="destruction/ownerId"/>
     </xsl:call-template>
 </xsl:template>
 

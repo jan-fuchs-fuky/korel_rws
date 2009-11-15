@@ -15,6 +15,7 @@
 
 <xsl:template name="html.static">
     <xsl:param name="ownerId" select="''"/>
+    <xsl:param name="refresh" select="''"/>
 
     <html lang="en">
     <head>
@@ -25,6 +26,14 @@
         <meta name="description" content="Korel Universal Worker Service"/>
         <meta name="keywords" content="gnu,gpl,open,source,linux,debian,python,uws,universal,worker,service,korel"/>
         <meta name="author" content="Jan Fuchs"/>
+
+        <xsl:if test="$refresh='true'">
+            <meta http-equiv="Pragma" content="no-cache"/>
+            <meta http-equiv="Cache-Control" content="no-cache"/>
+            <meta http-equiv="Expires" content="-1"/>
+            <meta http-equiv="Refresh" content="1"/>
+        </xsl:if>
+
     </head>
     <body>
     <center>

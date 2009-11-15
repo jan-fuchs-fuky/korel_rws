@@ -16,12 +16,54 @@
     </tr>
     
     <xsl:for-each select="uws:joblist/uws:job">
+    <xsl:variable name="phase" select="uws:phase"/>
+    <xsl:variable name="jobId" select="uws:jobId"/>
     <tr>
         <td><b><xsl:value-of select="uws:jobId"/></b></td>
         <td><xsl:value-of select="uws:jobInfo/project"/></td>
         <td><xsl:value-of select="uws:startTime"/></td>
         <td><xsl:value-of select="uws:jobInfo/runningTime"/></td>
-        <td colspan="4"><xsl:value-of select="uws:phase"/></td>
+        <td><xsl:value-of select="uws:phase"/></td>
+
+        <xsl:if test="not($phase='PENDING')">
+            <xsl:choose>
+                <xsl:when test="$phase='EXECUTING'">
+                    <td>
+                        <form action="{$service_url}/jobs/{$jobId}/phase" method="POST">
+                        <input type="hidden" name="PHASE" value="ABORT"/>
+                        <input type="submit" value="Abort"/>
+                        </form>
+                    </td>
+                </xsl:when>
+                <xsl:otherwise>
+                    <td>
+                        <form action="{$service_url}/jobs/{$jobId}/results" method="get">
+                        <input type="submit" value="Show result"/>
+                        </form>
+                    </td>
+                    <td>
+                        <form action="{$service_url}/jobs/{$jobId}" method="POST">
+                        <input type="hidden" name="ACTION" value="DELETE"/>
+                        <input type="submit" value="Delete"/>
+                        </form>
+                    </td>
+                    <td>
+                        <form action="{$service_url}/jobs/{$jobId}/again" method="get">
+                        <input type="submit" value="Run again"/>
+                        </form>
+                    </td>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:if>
+
+        <td>
+        <xsl:if test="$phase='PENDING'">
+            <form action="{$service_url}/jobs/{$jobId}/phase" method="POST">
+            <input type="hidden" name="PHASE" value="RUN"/>
+            <input type="submit" value="Run"/>
+            </form>
+        </xsl:if>
+        </td>
     </tr>
     </xsl:for-each>
     
