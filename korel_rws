@@ -361,6 +361,9 @@ class RootServer:
                 return jobs.phase(self.username, params["id"])
             elif (params["what"] == "again"):
                 return jobs.again(self.username, self.user_settings["email"], params["id"])
+            elif ((params["what"] == "param") and (params.has_key("file")) and \
+                  (params["file"] in ["korel.dat", "korel.par", "korel.tmp"])):
+                    return jobs.download(self.username, params["id"], params["file"])
             elif (params["what"] == "results"):
                 if (params.has_key("file")):
                     return jobs.download(self.username, params["id"], params["file"])

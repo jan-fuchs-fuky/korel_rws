@@ -34,7 +34,7 @@ def append_to_queue():
 # TODO: omezit cas cekani
 def wait_on_run():
     while (1):
-        if (os.path.isfile("grant")):
+        if (os.path.isfile(".grant")):
             break
         time.sleep(0.1)
 
@@ -73,10 +73,6 @@ def main():
     else:
         phase = "ERROR"
 
-    fo = open(".phase", "w")
-    fo.write("%s\n" % phase)
-    fo.close()
-
     if (result == 0):
         if (os.path.isfile("phg.ps")):
             call("sed -i '/end/d' phg.ps", shell=True)
@@ -84,6 +80,10 @@ def main():
 
         if (os.path.isfile("korel.res")):
             call(["%s/plotsp.sh" % os.path.dirname(korel_bin), "korel.res"])
+
+    fo = open(".phase", "w")
+    fo.write("%s\n" % phase)
+    fo.close()
 
     korel_result = open("returncode.txt", "w")
     korel_result.write("%s\n" % result)

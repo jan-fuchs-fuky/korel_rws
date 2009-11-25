@@ -154,7 +154,7 @@ class KorelScheduler():
             job_dir = fo.readline().strip()
             fo.close()
     
-            fo = open("%s/grant" % job_dir, "w")
+            fo = open("%s/.grant" % job_dir, "w")
             fo.write("%i\n" % os.getpid())
             fo.close()
     
