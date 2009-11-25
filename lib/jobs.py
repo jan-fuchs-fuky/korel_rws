@@ -514,17 +514,20 @@ def phase(username, id):
 
 def detail(username, id):
     job_dir = get_job_dir(username, id)
-    info = get_info(job_dir)
 
+    fo = open("%s/.phase" % job_dir, "r")
+    phase_value = fo.readline().strip()
+    fo.close()
+
+    if (phase_value == "EXECUTING"):
+       raise cherrypy.HTTPRedirect(["/jobs/%s/phase" % id], 303)
+
+    info = get_info(job_dir)
     runningTime = ""
     if (info["endTime"] and info["startTime"]):
         runningTime = human_time(info["endTime"], info["startTime"])
     elif (info["startTime"]):
         runningTime = human_time(time.time(), info["startTime"])
-
-    fo = open("%s/.phase" % job_dir, "r")
-    phase_value = fo.readline().strip()
-    fo.close()
 
     result = []
     result.append('<uws:job %s>' % share.XMLNS)
