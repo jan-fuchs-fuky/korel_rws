@@ -263,8 +263,8 @@ def againstart(username, params, environ, max_disk_space):
     file.write(params["korel_par"])
     file.close()
 
-    save2file("%s/project" % job_dir, params["project"])
-    save2file("%s/comment" % job_dir, params["comment"])
+    save2file("%s/.project" % job_dir, params["project"])
+    save2file("%s/.comment" % job_dir, params["comment"])
 
     if (params.has_key(".mailing")):
         save2file("%s/.mailing" % job_dir, params["email"])
