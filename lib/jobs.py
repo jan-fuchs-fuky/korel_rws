@@ -502,7 +502,7 @@ def phase(username, id):
 
     #if ((cherrypy.request.wsgi_environ["HTTP_ACCEPT"]) == "application/xml"):
     #    return template.xml2result("".join(result))
-    if (phase_value not in ["EXECUTING", "PENDING"]):
+    if (phase_value not in ["EXECUTING", "PENDING", "QUEUED"]):
         raise cherrypy.HTTPRedirect(["/jobs/%s/results" % id], 303)
 
     result.append('<phase>')
@@ -519,7 +519,7 @@ def detail(username, id):
     phase_value = fo.readline().strip()
     fo.close()
 
-    if (phase_value == "EXECUTING"):
+    if (phase_value in ["EXECUTING", "QUEUED"]):
        raise cherrypy.HTTPRedirect(["/jobs/%s/phase" % id], 303)
 
     info = get_info(job_dir)
