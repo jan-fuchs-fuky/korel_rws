@@ -1,4 +1,13 @@
+#!/usr/bin/env python2.5
+# -*- coding: utf-8 -*-
+
 """ Template """
+
+#
+# Author: Jan Fuchs <fuky@sunstel.asu.cas.cz>
+# $Date$
+# $Rev$
+#
 
 import os
 import cherrypy
@@ -8,9 +17,6 @@ from StringIO import StringIO
 
 import share
 
-#html_xsl = etree.parse("./xsl/html.xsl")
-#html_transform = etree.XSLT(html_xsl)
-
 def xml2result(xml, name_xsl=""):
     result = []
     result.append('<?xml version="1.0" encoding="UTF-8"?>')
@@ -18,18 +24,15 @@ def xml2result(xml, name_xsl=""):
                   (share.settings["service_url"], name_xsl))
     result.append(xml)
 
-    cherrypy.response.headers['Content-Type'] = "text/xml"
-    return "\n".join(result)
+    http_accept = cherrypy.request.wsgi_environ["HTTP_ACCEPT"]
+    if ((http_accept.find("text/xml") != -1) or (http_accept.find("application/xml") != -1)):
+        cherrypy.response.headers['Content-Type'] = "text/xml"
+        return "\n".join(result)
+    else:
+        cherrypy.response.headers['Content-Type'] = "text/html"
 
-    #service_url = "'%s'" % os.getenv("KOREL_SERVICE_URL", default="https://127.0.0.1:8000")
+        html_xsl = etree.parse("./xsl/html-%s.xsl" % name_xsl)
+        html_transform = etree.XSLT(html_xsl)
+        xml_tree = etree.parse(StringIO("\n".join(result)))
 
-    #if (xml[0] == "<"):
-    #    xml = StringIO('<?xml version="1.0" encoding="UTF-8"?>\n%s' % xml)
-
-    #if ((cherrypy.request.wsgi_environ["HTTP_ACCEPT"]) == "application/xml"):
-    #    return xml
-    #else:
-    #    xml_tree = etree.parse(xml)
-    #    html = str(html_transform(xml_tree, service_url=service_url, user="'%s'" % user))
-
-    #    return html
+        return str(html_transform(xml_tree))
