@@ -241,10 +241,7 @@ def again(username, email, id):
         result.append("<new_id>%s</new_id>" % new_id)
         result.append("<email>%s</email>" % email)
 
-        result.append("<korel_par><![CDATA[")
-        result.append(get_file(korel_par))
-        result.append("]]></korel_par>")
-
+        result.append("<korel_par><![CDATA[%s]]></korel_par>" % get_file(korel_par))
         result.append("</again>")
 
         return template.xml2result("\n".join(result), "again")
