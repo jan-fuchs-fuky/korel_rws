@@ -62,6 +62,8 @@ def load_user_settings():
         user = user_xml[:-4]
         user_settings.update({user: get_user_settings(user_xml_path)})
 
+    return user_settings
+
 def refresh_user_settings(user, user_settings_mtime):
     user_xml_path = "%s/%s.xml" % (KOREL_USERS_PATH, user)
 
