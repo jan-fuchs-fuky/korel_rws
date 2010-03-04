@@ -20,15 +20,18 @@ import share
 def xml2result(xml, name_xsl=""):
     result = []
     result.append('<?xml version="1.0" encoding="UTF-8"?>')
-    result.append('<?xml-stylesheet href="%s/xsl/html-%s.xsl" type="text/xsl"?>' % \
-                  (share.settings["service_url"], name_xsl))
-    result.append(xml)
 
     http_accept = cherrypy.request.wsgi_environ["HTTP_ACCEPT"]
-    if ((http_accept.find("text/xml") != -1) or (http_accept.find("application/xml") != -1)):
+    #if ((http_accept.find("text/xml") != -1) or (http_accept.find("application/xml") != -1)):
+    if (http_accept.find("text/html") == -1):
+        result.append(xml)
         cherrypy.response.headers['Content-Type'] = "text/xml"
         return "\n".join(result)
     else:
+        result.append('<?xml-stylesheet href="%s/xsl/html-%s.xsl" type="text/xsl"?>' % \
+                      (share.settings["service_url"], name_xsl))
+        result.append(xml)
+
         cherrypy.response.headers['Content-Type'] = "text/html"
 
         html_xsl = etree.parse("./xsl/html-%s.xsl" % name_xsl)

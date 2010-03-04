@@ -2,7 +2,7 @@
 
 gvim -p \
 ./korel_rws \
-./korel_sheduler \
+./korel_scheduler \
 ./lib/jobs.py \
 ./lib/mail.py \
 ./lib/template.py \
