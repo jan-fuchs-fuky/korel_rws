@@ -6,29 +6,44 @@
 <xsl:template name="html.dynamic">
     <h2>Home</h2>
     <p>
-    This service  is the tested for embedding Fourier disentangling into the
+    This service  is the test-bed for embedding Fourier disentangling into the
     Virtual Observatory infrastructure. Currently the system allows uploading
     of user data, on-the-fly modification of parameters and management of
-    various version of Korel and user files. The system uses the well-known
-    interface of electronic shop. The user can see only his own files (and it
-    is guaranted that nobody (except the administrator) can access his private
-    files.
+    various user files. The system uses the well-known
+    interface of electronic shop. The user can see only her/his own files and it
+    is guaranted that nobody (except the administrator) can access her/his private
+    files. More information  about the service and its motivation is described in 
+    <A href=" http://arxiv.org/abs/1003.4801">ArXiv:1003.4801</A>. The underlaying  
+    code  KOREL is presented 
+    on <A href="http://www.asu.cas.cz/~had/korel.html">KOREL</A> web page of its author P. Hadrava.
     </p>
     
     <p>
     To achive this the full encryption is used and the user is required to
-    register (create unique account). Before he can use the service, the
-    administrator has to allow him explicitly.
+    register (create unique account). After filling the form (and solving simple math question), the special credential is sent to user's mail.
+    The web service may be used directly after the link embedded in mail is activated.
+    Currently up to  five concurrent jobs may run in parallel - the others are queued.
+    The service is adhering to the IVOA standards for Universal Worker Server (<A href="http://www.ivoa.net/Documents/UWS/20100210/">UWS</A>).
     </p>
     
+   When using the results achieved by this system, please write the
+   acknowledgment similar to the one stated below:  
+  <hr> 
+  </hr>
+   <b> This research was
+   accomplished  with the help of  the VO-KOREL web service, developed at the Astronomical Institute
+   of the Academy of Sciences of the Czech Republic in the framework of the
+   Czech Virtual Observatory (CZVO) by P. Skoda and  J. Fuchs using the Fourier
+   disentangling code KOREL deviced by P. Hadrava
+</b>
+<hr>
+</hr>
+ Current version of KOREL installed on this server is <CODE> KOREL09 release 11.11.2009</CODE>.
+ <p>
+ It can handle up to 2000 spectra with maximal size of 16384 bins, 50 spectral regions and 3 templates.
+ </p>
     <p>
-    Trusted users (again after permission of administrator) will be able to
-    compile the customized version of Korel 2008 - different sizes or amount of
-    spectra, spectral regions etc ...
-    </p>
-    
-    <p>
-    More details will be put in future on the server - so read it regularly.
+   <em> More details will be put in future on the server - so read it regularly.</em>
     </p>
 </xsl:template>
 

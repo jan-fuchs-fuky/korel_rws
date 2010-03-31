@@ -10,7 +10,7 @@
     doctype-public="-//W3C//DTD HTML 4.01 Transitional//EN"
     doctype-system="http://www.w3.org/TR/html4/loose.dtd"/>
 
-<xsl:variable name="service_url" select='"https://127.0.0.1:8000"'/>
+<xsl:variable name="service_url" select='"https://stelweb.asu.cas.cz/vo-korel"'/>
 
 
 <xsl:template name="html.static">
@@ -21,9 +21,9 @@
     <head>
         <meta http-equiv="Content-language" content="en"/>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-        <title>Korel Universal Worker Service</title>
+        <title>VO-KOREL web service</title>
         <link href="{$service_url}/css/default.css" rel="stylesheet" type="text/css"/>
-        <meta name="description" content="Korel Universal Worker Service"/>
+        <meta name="description" content="VO-KOREL web service"/>
         <meta name="keywords" content="gnu,gpl,open,source,linux,debian,python,uws,universal,worker,service,korel"/>
         <meta name="author" content="Jan Fuchs"/>
 
@@ -39,7 +39,7 @@
     <center>
     <table class="main">
         <tr><td>
-            <h1>Korel Universal Worker Service</h1>
+            <h1>VO-KOREL Web Service</h1>
         </td></tr>
 
         <tr><td>

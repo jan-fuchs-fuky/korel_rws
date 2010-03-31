@@ -19,9 +19,17 @@
     </tr>
     <tr>
         <td colspan="2">
-        Please attach korel.dat, korel.par, korel.tmp or archive korel.(zip|tar.gz|tar.bz2).
-        Archive must contain once a korel directory. The korel
-        directory can contain korel.dat, korel.par and korel.tmp.
+        Please attach korel.dat and korel.par (plus korel.tmp if a template is required).
+        You may use alternatively an archive korel.(zip|tar.gz|tar.bz2).
+        Archive must contain a <em>korel</em> directory. The korel
+        directory can contain korel.dat, korel.par and korel.tmp. 
+        <p>
+        After clicking the <code>Start</code> button the files are uploaded to the server, the job is created
+        and prepared to run (after clicking the <code>Run</code> button). You may upload and create several jobs,
+        and run them afterwards from the list of jobs. If more than five jobs are running, the further are queued
+        and run once other is finished.
+        </p> 
+
         </td>
     </tr>
     <tr>
