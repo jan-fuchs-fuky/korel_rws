@@ -6,3 +6,21 @@ Run new job:
 notebook$ ssh -L 8000:localhost:8000 fuky@alioth
 
 $ curl -H "Accept: application/xml" -k https://127.0.0.1:8000
+
+*** Spousteni pri testovani ***
+
+$ cd etc
+$ ln -s korel_rws-local.cfg korel_rws.cfg
+
+$ vim xsl/html-common.xsl
+<xsl:variable name="service_url" select='"https://campanula:8000"'/>
+
+$ KOREL_RWS_DIR=$PWD ./init.d/korel_rws start
+
+*** Instalace CherryPy ***
+
+# wget http://download.cherrypy.org/cherrypy/3.2.0/CherryPy-3.2.0.tar.gz
+# tar zxf CherryPy-3.2.0.tar.gz
+# cd CherryPy-3.2.0
+# python2.6 setup.py build
+# python2.6 setup.py install

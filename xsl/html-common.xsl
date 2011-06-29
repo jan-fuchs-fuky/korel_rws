@@ -10,7 +10,8 @@
     doctype-public="-//W3C//DTD HTML 4.01 Transitional//EN"
     doctype-system="http://www.w3.org/TR/html4/loose.dtd"/>
 
-<xsl:variable name="service_url" select='"https://stelweb.asu.cas.cz/vo-korel"'/>
+<!-- <xsl:variable name="service_url" select='"https://stelweb.asu.cas.cz/vo-korel"'/> -->
+<xsl:variable name="service_url" select='"https://campanula:8000"'/>
 
 
 <xsl:template name="html.static">
