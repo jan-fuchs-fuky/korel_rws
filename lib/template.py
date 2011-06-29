@@ -36,6 +36,6 @@ def xml2result(xml, name_xsl=""):
 
         html_xsl = etree.parse("./xsl/html-%s.xsl" % name_xsl)
         html_transform = etree.XSLT(html_xsl)
-        xml_tree = etree.parse(StringIO("\n".join(result)))
+        xml_tree = etree.parse(StringIO("\n".join(result).encode("UTF-8")))
 
         return str(html_transform(xml_tree))
