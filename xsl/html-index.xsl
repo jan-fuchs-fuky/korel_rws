@@ -38,7 +38,7 @@
 </b>
 <hr>
 </hr>
- Current version of KOREL installed on this server is <CODE> KOREL09 release 11.11.2009</CODE>.
+ Current version of KOREL installed on this server is <CODE>KOREL11a - release 21. 6. 2011</CODE>.
  <p>
  It can handle up to 2000 spectra with maximal size of 16384 bins, 50 spectral regions and 3 templates.
  </p>
