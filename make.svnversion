@@ -1,0 +1,8 @@
+#!/bin/bash
+
+cat <<EOF >lib/svnversion.py
+#!/usr/bin/env python2.6
+
+def get():
+    return "$(svnversion -n .)"
+EOF

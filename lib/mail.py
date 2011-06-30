@@ -9,8 +9,6 @@
 # $Rev$
 #
 
-__version__ = "0.9.5"
-
 import os
 import time
 import smtplib
@@ -22,10 +20,12 @@ from email.MIMEMultipart import MIMEMultipart
 from email.MIMEBase import MIMEBase
 from email import encoders
 
+import svnversion
+
 MAIL_CONTENT_TYPE = "plain"
 MAIL_CHARSET = "utf-8"
 MAIL_FROM = "korel@sunstel.asu.cas.cz"
-MAIL_USER_AGENT = "KorelRWS/%s" % __version__
+MAIL_USER_AGENT = "KorelRWS/r%s" % svnversion.get()
 
 class Options():
     smtp_address = None
