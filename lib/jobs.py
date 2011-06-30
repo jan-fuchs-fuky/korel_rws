@@ -387,7 +387,8 @@ def list(username, max_disk_space):
         dirs_dict.update({dir: mtime})
 
     result = []
-    result.append("<uws:jobs %s>" % share.XMLNS)
+    result.append("<uws:joblist %s>" % share.XMLNS)
+    result.append('<uws:ownerId>%s</uws:ownerId>' % username)
     # sort key dir by value mtime
     for item in sorted(dirs_dict.iteritems(), key=lambda (k,v): (v,k), reverse=True):
         id = item[0]
@@ -400,13 +401,41 @@ def list(username, max_disk_space):
         elif (info["startTime"]):
             runningTime = human_time(time.time(), info["startTime"])
 
-        result.append('<uws:jobref id="%s" xlink:href="%s/jobs/%s">' % (id, share.settings["service_url"], id))
-        result.append('    <uws:phase>%s</uws:phase>' % info["phase"])
-        result.append('</uws:jobref>')
+        #result.append('<uws:jobref id="%s" xlink:href="%s/jobs/%s">' % (id, share.settings["service_url"], id))
+        #result.append('    <uws:phase>%s</uws:phase>' % info["phase"])
+        #result.append('</uws:jobref>')
+        result.append('<uws:job>')
+        result.append('<uws:jobId>%s</uws:jobId>"' % id)
+        result.append('<uws:ownerId>%s</uws:ownerId>' % username)
+        result.append('<uws:phase>%s</uws:phase>' % info["phase"])
+        result.append('<uws:startTime>%s</uws:startTime>' % format_time(info["startTime"]))
+        result.append('<uws:endTime>%s</uws:endTime>' % format_time(info["endTime"]))
+        result.append('<uws:executionDuration>%s</uws:executionDuration>' % info["executionDuration"])
+        result.append('<uws:destruction>%s</uws:destruction>' % format_time(info["destruction"]))
+        result.append('<uws:parameters>')
+        result.append('<uws:parameter id="image" byReference="true">jobs/jobid123/param/image</uws:parameter>')
+        result.append('<uws:parameter id="korel.dat" byReference="true">%s</uws:parameter>' % get_param(id, "korel.dat"))
+        result.append('<uws:parameter id="korel.par" byReference="true">%s</uws:parameter>' % get_param(id, "korel.par"))
+        result.append('<uws:parameter id="korel.tmp" byReference="true">%s</uws:parameter>' % get_param(id, "korel.tmp"))
+        result.append('</uws:parameters>')
+        result.append('<uws:results>')
+        result.append('<uws:result id="correctedImage" xlink:href="http://myserver.org/uws/jobs/jobid123/result/image"/>')
+        result.append('</uws:results>')
+        result.append('<uws:errorSummary type="transient">')
+        result.append('<uws:message>we have problem</uws:message>')
+        result.append('<uws:detail xlink:href="http://myserver.org/uws/jobs/jobid123/error"/>')
+        result.append('</uws:errorSummary>')
+        result.append('<uws:jobInfo>')
+        result.append('<comment>%s</comment>' % info["comment"])
+        result.append('<project>%s</project>' % info["project"])
+        result.append('<runningTime>%s</runningTime>' % runningTime)
+        result.append('</uws:jobInfo>')
+        result.append('</uws:job>')
 
-    result.append("</uws:jobs>")
+    result.append("</uws:joblist>")
 
-    return template.xml2result("\n".join(result), "jobs")
+    #return template.xml2result("\n".join(result), "jobs")
+    return template.xml2result("\n".join(result), "joblist")
 
 def results(username, id):
     job_dir = get_job_dir(username, id)
