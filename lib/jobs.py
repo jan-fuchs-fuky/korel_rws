@@ -200,7 +200,7 @@ def create(username, params, max_disk_space):
     save2file("%s/.executionDuration" % job_dir, "3000")
     save2file("%s/.destruction" % job_dir, "8600")
 
-    if (params.has_key(".mailing")):
+    if (params.has_key("mailing")):
         save2file("%s/.mailing" % job_dir, params["email"])
 
     raise cherrypy.HTTPRedirect(["/jobs/%i" % id], 303)
@@ -263,7 +263,7 @@ def againstart(username, params, environ, max_disk_space):
     save2file("%s/.project" % job_dir, params["project"])
     save2file("%s/.comment" % job_dir, params["comment"])
 
-    if (params.has_key(".mailing")):
+    if (params.has_key("mailing")):
         save2file("%s/.mailing" % job_dir, params["email"])
 
     start_korel(job_dir, environ)
