@@ -19,7 +19,7 @@
     <xsl:variable name="phase" select="uws:phase"/>
     <xsl:variable name="jobId" select="uws:jobId"/>
     <tr>
-        <td><b><xsl:value-of select="uws:jobId"/></b></td>
+        <td><a href="{$service_url}/jobs/{$jobId}"><b><xsl:value-of select="uws:jobId"/></b></a></td>
         <td><xsl:value-of select="uws:jobInfo/project"/></td>
         <td><xsl:value-of select="uws:startTime"/></td>
         <td><xsl:value-of select="uws:jobInfo/runningTime"/></td>
