@@ -1,10 +1,6 @@
-#!/bin/bash
-
-cat <<EOF >lib/svnversion.py
 #!/usr/bin/env python2.6
 
 # Generated automatically from ../make.svnversion. DO NOT EDIT.
 
 def get():
-    return "$(svnversion -n .)"
-EOF
+    return "81:82M"
