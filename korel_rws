@@ -288,7 +288,7 @@ class RootServer:
 
                 body = []
                 body.append("Please confirm you registration on Korel RESTful Web Services:\n\n")
-                body.append("https://stelweb.asu.cas.cz/vo-korel/user/confirm/%s\n\n" % confirmation)
+                body.append("%s/user/confirm/%s\n\n" % (share.settings["service_url"], confirmation))
                 body.append("First name: %s\n" % params["first_name"])
                 body.append("Surname: %s\n" % params["surname"])
                 body.append("Organization: %s\n" % params["organization"])
@@ -475,7 +475,7 @@ def handle_error():
     cherrypy.response.status = 500
     error = share.make_message("Error", "Sorry, an error occurred.", "error")
     cherrypy.response.body = [ template.xml2result(error, "message") ]
-    send_mail("fuky@fuky.org", "Error in Korel RESTful Web Service", _cperror.format_exc(), options)
+    send_mail(share.settings["exception_email"], "Error in Korel RESTful Web Service", _cperror.format_exc(), options)
 
 #
 #   Note that the internal CherryPy engine by default attempts to register signal
@@ -573,6 +573,7 @@ if __name__ == '__main__':
     share.settings.update({"max_upload_file": cfg.getint("korel", "max_upload_file") * 1024 * 1024})
     share.settings.update({"max_runtime": cfg.getint("korel", "max_runtime")})
     share.settings.update({"service_url": options.service_url})
+    share.settings.update({"exception_email": cfg.get("server", "exception_email")})
 
     os.environ.update({"KOREL_SERVICE_URL": options.service_url})
 
