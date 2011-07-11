@@ -452,6 +452,7 @@ def results(username, id):
 
     if (phase_value != "EXECUTING"):
         root, dirs, files = os.walk(job_dir).next()
+        files.sort()
         for file in files:
             if (file.find("component") == 0):
                 result.append("<component>%s</component>" % file)
