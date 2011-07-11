@@ -488,7 +488,10 @@ def download(username, id, file):
     file_path = os.path.abspath("%s/%s" % (job_dir, file))
 
     if (os.path.isfile(file_path)):
-        return serve_file(file_path)
+        if (file_path[-4:] == ".dat"):
+            return serve_file(file_path, content_type="text/plain")
+        else:
+            return serve_file(file_path)
     else:
         return "File '%s' not found" % file_path
 
