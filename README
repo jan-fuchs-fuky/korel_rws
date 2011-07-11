@@ -19,6 +19,8 @@ $ KOREL_RWS_DIR=$PWD ./init.d/korel_rws start
 
 *** Instalace CherryPy ***
 
+POZOR: Musi se pouzit verze 3.1.2, protoze 3.2 je plna chyb.
+
 # wget http://download.cherrypy.org/cherrypy/3.2.0/CherryPy-3.2.0.tar.gz
 # tar zxf CherryPy-3.2.0.tar.gz
 # cd CherryPy-3.2.0

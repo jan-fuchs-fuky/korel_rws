@@ -418,12 +418,13 @@ class RootServer:
 
     def check_auth(self):
         cookie = cherrypy.request.cookie
-        http_accept = cherrypy.request.wsgi_environ["HTTP_ACCEPT"]
 
-        if (http_accept.find("text/html") == -1):
-            self.username = "nobody"
-            self.make_user_settings()
-            return True
+        #http_accept = cherrypy.request.wsgi_environ["HTTP_ACCEPT"]
+
+        #if (http_accept.find("text/html") == -1):
+        #    self.username = "nobody"
+        #    self.make_user_settings()
+        #    return True
 
         if (cookie.has_key("KorelUserName") and cookie.has_key("KorelAuthorizationKey")):
             self.username = cookie["KorelUserName"].value
