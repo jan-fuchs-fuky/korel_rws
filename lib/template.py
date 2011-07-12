@@ -28,8 +28,7 @@ def xml2result(xml, name_xsl=""):
         cherrypy.response.headers['Content-Type'] = "text/xml"
         return "\n".join(result)
     else:
-        result.append('<?xml-stylesheet href="%s/xsl/html-%s.xsl" type="text/xsl"?>' % \
-                      (share.settings["service_url"], name_xsl))
+        #result.append('<?xml-stylesheet href="/xsl/html-%s.xsl" type="text/xsl"?>' % name_xsl)
         result.append(xml)
 
         cherrypy.response.headers['Content-Type'] = "text/html"
