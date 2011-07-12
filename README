@@ -7,15 +7,10 @@ notebook$ ssh -L 8000:localhost:8000 fuky@alioth
 
 $ curl -H "Accept: application/xml" -k https://127.0.0.1:8000
 
-*** Spousteni pri testovani (DEPRECATED) ***
+*** Spousteni ***
 
-$ cd etc
 $ ln -s korel_rws-local.cfg korel_rws.cfg
-
-$ vim xsl/html-common.xsl
-<xsl:variable name="service_url" select='"https://campanula:8000"'/>
-
-$ KOREL_RWS_DIR=$PWD ./init.d/korel_rws start
+$ KOREL_RWS_DIR=$PWD ./init.d/korel_scheduler start
 
 *** Nastaveni Apache ***
 
