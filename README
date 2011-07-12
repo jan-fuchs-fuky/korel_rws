@@ -30,7 +30,7 @@ $ KOREL_RWS_DIR=$PWD ./init.d/korel_rws start
 	
 	WSGIDaemonProcess korel_rws user=fuky group=fuky processes=1 threads=2
 	WSGIProcessGroup korel_rws
-	WSGIScriptAlias / /home/fuky/svn/korel_rws/trunk/korel_rws
+	WSGIScriptAlias / /home/fuky/svn/korel_rws/trunk/korel_rws.py
 	
 	<Directory /home/fuky/svn/korel_rws/trunk>
 		Order deny,allow
