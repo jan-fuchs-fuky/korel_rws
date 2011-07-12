@@ -19,7 +19,7 @@ $ KOREL_RWS_DIR=$PWD ./init.d/korel_rws start
 
 *** Nastaveni Apache ***
 
-# vim /etc/apache2/sites-enabled/korel-ssl
+# vim /etc/apache2/sites-available/korel-ssl
 <IfModule mod_ssl.c>
 <VirtualHost _default_:443>
 	ServerAdmin fuky@sunstel.asu.cas.cz
