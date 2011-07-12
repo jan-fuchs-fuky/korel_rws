@@ -7,7 +7,7 @@ notebook$ ssh -L 8000:localhost:8000 fuky@alioth
 
 $ curl -H "Accept: application/xml" -k https://127.0.0.1:8000
 
-*** Spousteni pri testovani ***
+*** Spousteni pri testovani (DEPRECATED) ***
 
 $ cd etc
 $ ln -s korel_rws-local.cfg korel_rws.cfg
@@ -16,6 +16,51 @@ $ vim xsl/html-common.xsl
 <xsl:variable name="service_url" select='"https://campanula:8000"'/>
 
 $ KOREL_RWS_DIR=$PWD ./init.d/korel_rws start
+
+*** Nastaveni Apache ***
+
+# vim /etc/apache2/sites-enabled/korel-ssl
+<IfModule mod_ssl.c>
+<VirtualHost _default_:443>
+	ServerAdmin fuky@sunstel.asu.cas.cz
+	
+	ServerName localhost
+	ServerAlias *.localhost
+	DocumentRoot /home/fuky/svn/korel_rws/trunk
+	
+	WSGIDaemonProcess korel_rws user=fuky group=fuky processes=1 threads=2
+	WSGIProcessGroup korel_rws
+	WSGIScriptAlias / /home/fuky/svn/korel_rws/trunk/korel_rws
+	
+	<Directory /home/fuky/svn/korel_rws/trunk>
+		Order deny,allow
+		Allow from all
+	</Directory>
+
+	ErrorLog ${APACHE_LOG_DIR}/error.log
+
+	LogLevel warn
+
+	CustomLog ${APACHE_LOG_DIR}/ssl_access.log combined
+
+	SSLEngine on
+
+	SSLCertificateFile    /etc/ssl/certs/ssl-cert-snakeoil.pem
+	SSLCertificateKeyFile /etc/ssl/private/ssl-cert-snakeoil.key
+
+	BrowserMatch "MSIE [2-6]" \
+		nokeepalive ssl-unclean-shutdown \
+		downgrade-1.0 force-response-1.0
+	BrowserMatch "MSIE [17-9]" ssl-unclean-shutdown
+
+</VirtualHost>
+</IfModule>
+
+# aptitude install libapache2-mod-wsgi
+# a2enmod wsgi
+# a2enmod ssl
+# a2ensite korel-ssl
+# /etc/init.d/apache2 restart
 
 *** Instalace CherryPy ***
 

@@ -25,14 +25,15 @@ import Image
 import ImageDraw
 import ImageFont
 import ConfigParser
-from optparse import OptionParser
 from lxml import etree
 from cherrypy import _cperror
 from cherrypy.lib import httpauth
 from cherrypy.lib.static import serve_file
 from StringIO import StringIO
 
-script_path = os.path.dirname(os.path.realpath(os.path.abspath(sys.argv[0])))
+#script_path = "/home/fuky/svn/korel_rws/trunk"
+script_path = os.path.dirname(__file__)
+#script_path = os.path.dirname(os.path.realpath(os.path.abspath(sys.argv[0])))
 sys.path.append(os.path.abspath("%s/lib" % script_path))
 os.chdir(script_path)
 
@@ -40,7 +41,7 @@ import jobs
 import template
 import share
 
-from mail import send_mail
+from mail import send_mail, SMTP_Options
 
 font = ImageFont.load("./share/fonts/ter-u24n_unicode.pil")
 parser = etree.XMLParser(remove_blank_text=True)
@@ -48,12 +49,12 @@ parser = etree.XMLParser(remove_blank_text=True)
 environ = {}
 patterns = {}
 patterns.update({"login": re.compile("^[a-zA-Z][a-zA-Z._]*$")})
+smtp_options = SMTP_Options()
 
 USERS_PATH = "./etc/users"
 TMP_PATH = "./var/tmp"
 VAR_RUN_PATH = "./var/run"
 VAR_LOG_PATH = "./var/log"
-KOREL_RWS_PID = "./var/run/korel_rws.pid"
 EXPIRED_MATHPROBLEM = 600
 MATHPROBLEMS_ON_ONEIP = 100
 
@@ -296,7 +297,7 @@ class RootServer:
                 body.append("Password: %s\n" % params["password"])
                 body.append("E-mail: %s\n" % params["email"])
 
-                send_mail(params["email"], "Korel RESTful Web Service: Register user", "".join(body), options)
+                send_mail(params["email"], "Korel RESTful Web Service: Register user", "".join(body), smtp_options)
                 errmsg = register_user(params)
 
             if (errmsg != ""):
@@ -475,122 +476,56 @@ def handle_error():
     cherrypy.response.status = 500
     error = share.make_message("Error", "Sorry, an error occurred.", "error")
     cherrypy.response.body = [ template.xml2result(error, "message") ]
-    send_mail(share.settings["exception_email"], "Error in Korel RESTful Web Service", _cperror.format_exc(), options)
+    send_mail(share.settings["exception_email"], "Error in Korel RESTful Web Service", _cperror.format_exc(), smtp_options)
 
-#
-#   Note that the internal CherryPy engine by default attempts to register signal
-#   handlers for SIGTERM and SIGHUP.
-#
-def main():
-    share.create_pid(KOREL_RWS_PID)
+cfg = ConfigParser.RawConfigParser()
+cfg.read("%s/etc/korel_rws.cfg" % (os.path.dirname(__file__)))
 
-    cherrypy.log.screen = False
-    cherrypy.log.access_file = os.path.abspath("%s/access.log" % VAR_LOG_PATH)
-    cherrypy.log.error_file = os.path.abspath("%s/error.log" % VAR_LOG_PATH)
+smtp_options.smtp_address = cfg.get("smtp", "address")
+smtp_options.smtp_port = cfg.getint("smtp", "port")
+smtp_options.smtp_user = cfg.get("smtp", "user")
+smtp_options.smtp_password = cfg.get("smtp", "password")
+smtp_options.smtp_ssl = cfg.getboolean("smtp", "ssl")
 
-    #cfg = ConfigParser.RawConfigParser()
-    #cfg.add_section("smtp")
-    #cfg.set("smtp", "addresss", options.smtp_address)
-    #cfg.set("smtp", "port", options.smtp_port)
-    #cfg.set("smtp", "user", options.smtp_user)
-    #cfg.set("smtp", "password", options.smtp_password)
-    #cfg.set("smtp", "ssl", options.smtp_ssl)
+share.settings["service_url"] = cfg.get("server", "service_url")
+share.settings["max_process"] = cfg.getint("korel", "max_process")
+share.settings["max_memory"] = cfg.getint("korel", "max_memory")
+share.settings["max_disk_space"] = cfg.getint("korel", "max_disk_space")
+share.settings["max_upload_file"] = cfg.getint("korel", "max_upload_file") * 1024 * 1024
+share.settings["max_runtime"] = cfg.getint("korel", "max_runtime")
+share.settings["exception_email"] = cfg.get("server", "exception_email")
 
-    #fo_cfg = open("./etc/korel_rws.cfg", "w")
-    #cfg.write(fo_cfg)
-    #fo_cfg.close()
+environ["KOREL_SMTP_ADDREESS"] = smtp_options.smtp_address
+environ["KOREL_SMTP_PORT"] = str(smtp_options.smtp_port)
+environ["KOREL_SMTP_USER"] = smtp_options.smtp_user
+environ["KOREL_SMTP_PASSWORD"] = smtp_options.smtp_password
+environ["KOREL_SMTP_SSL"] = str(smtp_options.smtp_ssl)
+environ["KOREL_MAX_PROCESS"] = cfg.get("korel", "max_process")
 
-    config = {
-        'global': {
-            'server.socket_host': options.address,
-            'server.socket_port': options.port,
-            'server.ssl_certificate': 'cert.pem',
-            'server.ssl_private_key': 'key.pem',
-            'request.error_response': handle_error,
-            'error_page.404': 'error/404.html',
-            'error_page.401': 'error/401.html',
-        },
+cherrypy.log.screen = False
+cherrypy.log.access_file = os.path.abspath("%s/access.log" % VAR_LOG_PATH)
+cherrypy.log.error_file = os.path.abspath("%s/error.log" % VAR_LOG_PATH)
 
-        '/': {
-            'tools.staticdir.root': script_path
-        },
+config = {
+    'global': {
+        'request.error_response': handle_error,
+        'error_page.404': 'error/404.html',
+        'error_page.401': 'error/401.html',
+    },
 
-        '/xsl': {
-            'tools.staticdir.on': True,
-            'tools.staticdir.dir': 'xsl',
-        },
+    '/': {
+        'tools.staticdir.root': script_path
+    },
 
-        '/css': {
-            'tools.staticdir.on': True,
-            'tools.staticdir.dir': 'css',
-        },
-    } 
- 
-    cherrypy.quickstart(RootServer(), '/', config=config)
+    '/xsl': {
+        'tools.staticdir.on': True,
+        'tools.staticdir.dir': 'xsl',
+    },
 
-if __name__ == '__main__':
-    option_parser = OptionParser()
+    '/css': {
+        'tools.staticdir.on': True,
+        'tools.staticdir.dir': 'css',
+    },
+} 
 
-    option_parser.add_option("-p", "--port", dest="port", type="int", default=None)
-    option_parser.add_option("-a", "--address", dest="address", default=None)
-    option_parser.add_option("-d", "--daemonize", dest="daemonize", default=None, action="store_true")
-    option_parser.add_option("-c", "--conf", dest="conf", default="korel_rws.cfg")
-    option_parser.add_option("--smtp-ssl", dest="smtp_ssl", default=None, action="store_true")
-    option_parser.add_option("--smtp-user", dest="smtp_user", default=None)
-    option_parser.add_option("--smtp-password", dest="smtp_password", default=None)
-    option_parser.add_option("--smtp-addresss", dest="smtp_address", default=None)
-    option_parser.add_option("--smtp-port", dest="smtp_port", type="int", default=None)
-    option_parser.add_option("--service-url", dest="service_url", default=None)
-
-    (options, args) = option_parser.parse_args()
-    #print "options: %s, args: %s" % (options, args)
-
-    cfg = ConfigParser.RawConfigParser()
-    cfg.read("%s/etc/%s" % (os.path.dirname(__file__), options.conf))
-
-    if (options.address is None):
-        options.address = cfg.get("server", "address")
-    if (options.port is None):
-        options.port = cfg.getint("server", "port")
-    if (options.daemonize is None):
-        options.daemonize = cfg.getboolean("server", "daemonize")
-    if (options.smtp_address is None):
-        options.smtp_address = cfg.get("smtp", "address")
-    if (options.smtp_port is None):
-        options.smtp_port = cfg.getint("smtp", "port")
-    if (options.smtp_user is None):
-        options.smtp_user = cfg.get("smtp", "user")
-    if (options.smtp_password is None):
-        options.smtp_password = cfg.get("smtp", "password")
-    if (options.smtp_ssl is None):
-        options.smtp_ssl = cfg.getboolean("smtp", "ssl")
-    if (options.service_url is None):
-        options.service_url = cfg.get("server", "service_url")
-
-    share.settings.update({"max_process": cfg.getint("korel", "max_process")})
-    share.settings.update({"max_memory": cfg.getint("korel", "max_memory")})
-    share.settings.update({"max_disk_space": cfg.getint("korel", "max_disk_space")})
-    share.settings.update({"max_upload_file": cfg.getint("korel", "max_upload_file") * 1024 * 1024})
-    share.settings.update({"max_runtime": cfg.getint("korel", "max_runtime")})
-    share.settings.update({"service_url": options.service_url})
-    share.settings.update({"exception_email": cfg.get("server", "exception_email")})
-
-    os.environ.update({"KOREL_SERVICE_URL": options.service_url})
-
-    environ.update({"KOREL_SMTP_ADDREESS": options.smtp_address})
-    environ.update({"KOREL_SMTP_PORT": str(options.smtp_port)})
-    environ.update({"KOREL_SMTP_USER": options.smtp_user})
-    environ.update({"KOREL_SMTP_PASSWORD": options.smtp_password})
-    environ.update({"KOREL_SMTP_SSL": str(options.smtp_ssl)})
-    environ.update({"KOREL_MAX_PROCESS": cfg.get("korel", "max_process")})
-
-    #print options
-
-    if (options.daemonize):
-        share.daemonize()
-
-    try:
-        main()
-    finally:
-        if (os.path.isfile(KOREL_RWS_PID)):
-            os.remove(KOREL_RWS_PID)
+application = cherrypy.Application(RootServer(), script_name=None, config=config)

@@ -22,19 +22,19 @@
             <xsl:value-of select="$phase"/><br/>
             <xsl:choose>
                 <xsl:when test="$phase='PENDING'">
-                    <form action="{$service_url}/jobs/{$jobId}/phase" method="POST">
+                    <form action="/jobs/{$jobId}/phase" method="POST">
                         <input type="hidden" name="PHASE" value="RUN"/>
                         <input type="submit" value="RUN"/>
                     </form>
                 </xsl:when>
                 <xsl:when test="$phase='COMPLETED'">
-                    <form action="{$service_url}/jobs/{$jobId}" method="POST">
+                    <form action="/jobs/{$jobId}" method="POST">
                         <input type="hidden" name="ACTION" value="DELETE"/>
                         <input type="submit" value="DELETE"/>
                     </form>
                 </xsl:when>
                 <xsl:when test="$phase='EXECUTING'">
-                    <form action="{$service_url}/jobs/{$jobId}/phase" method="POST">
+                    <form action="/jobs/{$jobId}/phase" method="POST">
                         <input type="hidden" name="PHASE" value="ABORT"/>
                         <input type="submit" value="ABORT"/>
                     </form>
@@ -78,7 +78,7 @@
         </td>
     </tr>
     <tr>
-        <td colspan="2"><a href="{$service_url}/jobs/{uws:job/uws:jobId}/results">Results</a></td>
+        <td colspan="2"><a href="/jobs/{uws:job/uws:jobId}/results">Results</a></td>
     </tr>
     </table>
 </xsl:template>

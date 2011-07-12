@@ -16,7 +16,7 @@
     <xsl:text> </xsl:text><xsl:value-of select="$phase"/>.
     </p>
 
-    <p><form action="{$service_url}/jobs/{$id}/again" method="get">
+    <p><form action="/jobs/{$id}/again" method="get">
     <input type="submit" value="run again"/>
     </form></p>
 
@@ -27,12 +27,12 @@
 
             <xsl:choose>
                 <xsl:when test="not(@type='normal')">
-                    <a href="{$service_url}/jobs/{$id}/results/{$link}" class="{@type}">
+                    <a href="/jobs/{$id}/results/{$link}" class="{@type}">
                         <xsl:value-of select="$link"/>
                     </a>
                 </xsl:when>
                 <xsl:otherwise>
-                    <a href="{$service_url}/jobs/{$id}/results/{$link}">
+                    <a href="/jobs/{$id}/results/{$link}">
                         <xsl:value-of select="$link"/>
                     </a>
                 </xsl:otherwise>
@@ -42,10 +42,10 @@
         </xsl:for-each>
         </p>
 
-        <p><img src="{$service_url}/jobs/{$id}/results/phg.png"/></p>
+        <p><img src="/jobs/{$id}/results/phg.png"/></p>
 
         <xsl:for-each select="result/component">
-            <p><img src="{$service_url}/jobs/{$id}/results/{.}"/></p>
+            <p><img src="/jobs/{$id}/results/{.}"/></p>
         </xsl:for-each>
     </xsl:if>
 </xsl:template>

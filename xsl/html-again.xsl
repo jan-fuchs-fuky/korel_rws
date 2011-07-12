@@ -6,7 +6,7 @@
 <xsl:template name="html.dynamic">
     <h2>Again job <xsl:value-of select="/again/id"/> as job <xsl:value-of select="/again/new_id"/></h2>
 
-    <form action="{$service_url}/jobs/{/again/new_id}/againstart" method="POST">
+    <form action="/jobs/{/again/new_id}/againstart" method="POST">
         <table>
         <tr>
             <td>Project name:</td>

@@ -27,7 +27,7 @@ MAIL_CHARSET = "utf-8"
 MAIL_FROM = "korel@sunstel.asu.cas.cz"
 MAIL_USER_AGENT = "KorelRWS/r%s" % svnversion.get()
 
-class Options():
+class SMTP_Options():
     smtp_address = None
     smtp_port = None
     smtp_user = None
@@ -36,7 +36,7 @@ class Options():
 
 def send_mail(to, subject, body, options=None, attachments=None):
     if (not options):
-        options = Options()
+        options = SMTP_Options()
         options.smtp_address = os.getenv("KOREL_SMTP_ADDREESS")
         options.smtp_port = int(os.getenv("KOREL_SMTP_PORT"))
         options.smtp_user = os.getenv("KOREL_SMTP_USER")
