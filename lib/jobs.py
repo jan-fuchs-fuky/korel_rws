@@ -24,6 +24,15 @@ import share
 
 JOBS_PATH = "./jobs"
 
+korel_plots = [
+    [ "plotdat.png", "korel.dat" ],
+    [ "plotmap.png", "korermap.dat" ],
+    [ "ploto-c.png", "korel.o-c" ],
+    [ "plotphg.png", "phg.ps" ],
+    [ "plotrv.png",  "korel.rv" ],
+    [ "plottmp.png", "korel.tmp" ],
+]
+
 def is_valid_xml_char(char):
     """ http://www.w3.org/TR/2004/REC-xml-20040204/#charsets """
 
@@ -458,8 +467,16 @@ def results(username, id):
             if (file.find("component") == 0):
                 result.append("<component>%s</component>" % file)
 
-            # skip hidden and other file
-            if ((file[0] == ".") or (file[-4:] == ".png")):
+            if (file[-4:] == ".png"):
+                for plot in korel_plots:
+                    if (file.find(plot[0]) == 0):
+                        result.append('<plot source="%s">%s</plot>' % (plot[1], plot[0]))
+
+                # skip PNG file
+                continue
+
+            # skip hidden file
+            if (file[0] == "."):
                 continue
 
             stat = os.stat("%s/%s" % (root, file))

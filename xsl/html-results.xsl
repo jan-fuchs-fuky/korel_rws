@@ -45,10 +45,15 @@
         </xsl:for-each>
         </p>
 
-        <p><img src="/jobs/{$id}/results/plotphg.png" alt="Picture plotphg.png generated from file phg.ps"/></p>
+        <xsl:for-each select="result/plot">
+            <h2>Picture <xsl:value-of select="."/> generated from file <xsl:value-of select="@source"/></h2>
+            <p><img src="/jobs/{$id}/results/{.}" alt="{.}"/></p>
+            <hr/>
+        </xsl:for-each>
 
         <xsl:for-each select="result/component">
-            <p><img src="/jobs/{$id}/results/{.}" alt="Picture {.} generated from file korel.spe"/></p>
+            <h2>Picture <xsl:value-of select="."/> generated from file korel.spe</h2>
+            <p><img src="/jobs/{$id}/results/{.}" alt="{.}"/></p>
         </xsl:for-each>
     </xsl:if>
 </xsl:template>
