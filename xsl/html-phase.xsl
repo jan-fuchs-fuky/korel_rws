@@ -4,6 +4,9 @@
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 <xsl:include href="html-common.xsl"/>
 
+<!-- $Date$ -->
+<!-- $Rev$ -->
+<!-- $URL$ -->
 
 <xsl:template name="html.dynamic">
     <h2>Phase</h2>
