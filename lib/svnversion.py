@@ -3,4 +3,4 @@
 # Generated automatically from ../make.svnversion. DO NOT EDIT.
 
 def get():
-    return "106"
+    return "107"

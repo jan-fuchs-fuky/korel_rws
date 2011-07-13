@@ -113,6 +113,9 @@ class KorelScheduler():
                 continue 
  
             try:
+                if (not self.user_settings_mtime.has_key(user_dir)):
+                    self.user_settings_mtime[user_dir] = 0
+
                 timestamp = time.time()
                 new_user_settings = share.refresh_user_settings(user_dir, self.user_settings_mtime[user_dir])
                 if (new_user_settings):
