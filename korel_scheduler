@@ -7,6 +7,7 @@
 # Author: Jan Fuchs <fuky@sunstel.asu.cas.cz>
 # $Date$
 # $Rev$
+# $URL$
 #
 
 import os
@@ -21,9 +22,8 @@ script_path = os.path.dirname(os.path.realpath(os.path.abspath(sys.argv[0])))
 sys.path.append(os.path.abspath("%s/lib" % script_path))
 os.chdir(script_path)
 
+import svnversion
 import share
-
-__version__ = "0.1.0"
 
 KOREL_SCHEDULER_PID = "./var/run/korel_scheduler.pid"
 KOREL_QUEUE_PATH = "./var/queue"
@@ -32,7 +32,7 @@ KOREL_SCHEDULER_LOG = "./var/log/korel_scheduler.log"
 class KorelScheduler():
     def __init__(self):
         self.user_settings = {}
-        self.user_settings_mtime = 0
+        self.user_settings_mtime = {}
         self.settings = {
             "max_process": 0,
             "max_memory": 0,
@@ -62,7 +62,7 @@ class KorelScheduler():
 
         share.create_pid(KOREL_SCHEDULER_PID)
 
-        self.logger.info("starting korel_sheduler %s" % __version__)
+        self.logger.info("starting korel_sheduler r%s" % svnversion.get())
 
         cfg = ConfigParser.RawConfigParser()
         cfg.read("%s/etc/%s" % (os.path.dirname(__file__), options.conf))
@@ -74,8 +74,11 @@ class KorelScheduler():
 
     def run(self):
         try:
-            self.user_settings_mtime = time.time()
+            timestamp = time.time()
             self.user_settings = share.load_user_settings()
+
+            for user in self.user_settings.keys():
+                self.user_settings_mtime[user] = timestamp
         except:
             self.logger.exception("exception")
 
@@ -110,8 +113,10 @@ class KorelScheduler():
                 continue 
  
             try:
-                new_user_settings = share.refresh_user_settings(user_dir, self.user_settings_mtime)
+                timestamp = time.time()
+                new_user_settings = share.refresh_user_settings(user_dir, self.user_settings_mtime[user_dir])
                 if (new_user_settings):
+                    self.user_settings_mtime[user_dir] = timestamp
                     self.logger.info("Load changed user '%s'" % user_dir)
                     self.user_settings.update({user_dir: new_user_settings})
             except:
