@@ -403,6 +403,12 @@ def list(username, max_disk_space):
     for item in sorted(dirs_dict.iteritems(), key=lambda (k,v): (v,k), reverse=True):
         id = item[0]
         job_dir = "%s/%s" % (root, id)
+
+        if (not os.path.isfile("%s/korel.par" % job_dir)):
+            # run again not success
+            call(["rm", "-rf", job_dir])
+            continue
+
         info = get_info(job_dir)
 
         runningTime = ""
