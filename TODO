@@ -7,3 +7,5 @@
 - otestovat/zprovoznit posilani XML
 
 - udelat klienta, ktery vyuziva XML
+
+- pri smazani jobu odstranit i *.tgz
