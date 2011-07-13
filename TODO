@@ -9,3 +9,6 @@
 - udelat klienta, ktery vyuziva XML
 
 - pri smazani jobu odstranit i *.tgz
+
+- udelat utility pro zjistovani aktivity na Korel RWS napr. pocet bezicich
+  jobu, prihlasenych uzivatelu atp.
