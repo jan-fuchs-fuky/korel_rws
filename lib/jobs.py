@@ -7,6 +7,7 @@
 # Author: Jan Fuchs <fuky@sunstel.asu.cas.cz>
 # $Date$
 # $Rev$
+# $URL$
 #
 
 import os
