@@ -1,5 +1,7 @@
 #! /usr/bin/env bash
 
+KOREL_BIN="$(dirname $(readlink -f ${BASH_SOURCE[0]}))"
+
 #
 # Author: Petr Skoda <skoda@sunstel.asu.cas.cz>
 #
@@ -12,7 +14,7 @@ nsp=$(awk '/spectra/ {print $6}'< "dat")
 for i in $(seq 1 $nsp) 
 do
 echo "component $i"
-(echo "set title \"Disentangled spectrum of component $i\" 0,0 "
+(echo "set title \"Disentangled spectrum of component $i\""
 echo 'set xlabel "Wavelength [A]"'
 echo 'set ylabel "relative intensity (offset from continuum) "'
 echo 'set term png'

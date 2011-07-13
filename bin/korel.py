@@ -75,11 +75,24 @@ def main():
 
     if (result == 0):
         if (os.path.isfile("phg.ps")):
-            call("sed -i '/end/d' phg.ps", shell=True)
-            call("convert phg.ps phg.png", shell=True)
-
-        if (os.path.isfile("korel.res")):
-            call(["%s/plotsp.sh" % os.path.dirname(korel_bin), "korel.res"])
+            call(["%s/plotphg.sh" % os.path.dirname(korel_bin)])
+        
+        if (os.path.isfile("korermap.dat")):
+            call(["%s/plotmap.sh" % os.path.dirname(korel_bin)])
+        
+        plots = [
+            "dat",
+            "o-c",
+            "rv",
+            "spe",
+            "tmp",
+        ]
+        
+        for plot in plots:
+            data = "korel.%s" % plot
+        
+            if (os.path.isfile(data)):
+                call(["%s/plot%s.sh" % (os.path.dirname(korel_bin), plot), data])
 
     fo = open(".phase", "w")
     fo.write("%s\n" % phase)
