@@ -3,7 +3,7 @@
 # Generated automatically from ../make.svnversion. DO NOT EDIT.
 
 def get():
-    return "116M"
+    return "119"
 
 def date():
-    return "Last Changed Date: 2011-07-15 11:19:07 +0200 (Fri, 15 Jul 2011)"
+    return "Last Changed Date: 2011-07-15 12:27:07 +0200 (Fri, 15 Jul 2011)"
