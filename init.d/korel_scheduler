@@ -5,7 +5,7 @@
 . /lib/lsb/init-functions
 
 if [[ ! -d "$KOREL_RWS_DIR" ]]; then
-    KOREL_RWS_DIR=/opt/korel_rws_apache
+    KOREL_RWS_DIR=/opt/korel_rws
 fi
 
 if [[ "$USER" == "root" ]]; then
