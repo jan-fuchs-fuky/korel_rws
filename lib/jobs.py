@@ -567,11 +567,17 @@ def detail(username, id):
     result.append('<uws:endTime>%s</uws:endTime>' % format_time(info["endTime"]))
     result.append('<uws:executionDuration>%s</uws:executionDuration>' % info["executionDuration"])
     result.append('<uws:destruction>%s</uws:destruction>' % format_time(info["destruction"]))
+
     result.append('<uws:parameters>')
-    result.append('<uws:parameter id="korel.dat" byReference="true">%s</uws:parameter>' % get_param(id, "korel.dat"))
-    result.append('<uws:parameter id="korel.par" byReference="true">%s</uws:parameter>' % get_param(id, "korel.par"))
-    result.append('<uws:parameter id="korel.tmp" byReference="true">%s</uws:parameter>' % get_param(id, "korel.tmp"))
+
+    for param in ["korel.dat", "korel.par", "korel.tmp"]:
+        param_file = "%s/%s" % (job_dir, param)
+        if (os.path.isfile(param_file) and (os.stat(param_file).st_size > 0)):
+            result.append('<uws:parameter id="%s" byReference="true">%s</uws:parameter>' % \
+                (param, get_param(id, param)))
+
     result.append('</uws:parameters>')
+
     result.append('<uws:errorSummary type="transient">')
     result.append('<uws:message>we have problem</uws:message>')
     result.append('<uws:detail xlink:href="http://myserver.org/uws/jobs/jobid123/error"/>')
