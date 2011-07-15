@@ -1,10 +1,16 @@
 #!/bin/bash
 
+REV=$(svnversion -n .)
+LAST_CHANGED_DATE=$(svn info -r ${REV%M*} |fgrep "Last Changed Date:")
+
 cat <<EOF >lib/svnversion.py
 #!/usr/bin/env python2.6
 
 # Generated automatically from ../make.svnversion. DO NOT EDIT.
 
 def get():
-    return "$(svnversion -n .)"
+    return "$REV"
+
+def date():
+    return "$LAST_CHANGED_DATE"
 EOF

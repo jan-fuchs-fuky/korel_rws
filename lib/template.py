@@ -16,6 +16,7 @@ from lxml import etree
 from StringIO import StringIO
 
 import share
+import svnversion
 
 def xml2result(xml, name_xsl=""):
     result = []
@@ -37,4 +38,7 @@ def xml2result(xml, name_xsl=""):
         html_transform = etree.XSLT(html_xsl)
         xml_tree = etree.parse(StringIO("\n".join(result).encode("UTF-8")))
 
-        return str(html_transform(xml_tree))
+        arg_svnversion = "'%s'" % svnversion.get()
+        arg_svndate = "'%s'" % svnversion.date()
+
+        return str(html_transform(xml_tree, svnversion=arg_svnversion, svndate=arg_svndate))

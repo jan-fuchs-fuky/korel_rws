@@ -81,6 +81,12 @@
             <xsl:call-template name="html.dynamic"/>
         </td></tr>
     </table>
+
+    <p>
+        r<xsl:value-of select="$svnversion"/> - 
+        <xsl:value-of select="$svndate"/>
+    </p>
+
     </center>
     </body>
     </html>
