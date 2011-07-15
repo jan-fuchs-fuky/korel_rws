@@ -7,6 +7,10 @@ notebook$ ssh -L 8000:localhost:8000 fuky@alioth
 
 $ curl -H "Accept: application/xml" -k https://127.0.0.1:8000
 
+*** /opt/bin/korel ***
+
+# aptitude install libf2c2
+
 *** https://stelweb.asu.cas.cz/vo-korel ***
 
 slon.stel# cat /etc/apache2/sites-enabled/all |grep 'ProxyPass.*korel.*'
