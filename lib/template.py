@@ -40,5 +40,6 @@ def xml2result(xml, name_xsl=""):
 
         arg_svnversion = "'%s'" % svnversion.get()
         arg_svndate = "'%s'" % svnversion.date()
+        arg_service_url = "'%s'" % share.settings["service_url"]
 
-        return str(html_transform(xml_tree, svnversion=arg_svnversion, svndate=arg_svndate))
+        return str(html_transform(xml_tree, svnversion=arg_svnversion, svndate=arg_svndate, service_url=arg_service_url))

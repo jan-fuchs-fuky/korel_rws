@@ -12,7 +12,7 @@
         Upgrading VO-KOREL Web Service in progress.
     </p>
     <p>
-        <center><img src="/images/icon_inprogress.gif"/></center>
+        <center><img src="{$service_url}/images/icon_inprogress.gif"/></center>
     </p>
 </xsl:template>
 

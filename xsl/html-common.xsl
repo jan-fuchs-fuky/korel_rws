@@ -23,7 +23,7 @@
         <meta http-equiv="Content-language" content="en"/>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
         <title>VO-KOREL web service</title>
-        <link href="/css/default.css" rel="stylesheet" type="text/css"/>
+        <link href="{$service_url}/css/default.css" rel="stylesheet" type="text/css"/>
         <meta name="description" content="VO-KOREL web service"/>
         <meta name="keywords" content="gnu,gpl,open,source,linux,debian,python,uws,universal,worker,service,korel"/>
         <meta name="author" content="Jan Fuchs"/>
@@ -46,17 +46,17 @@
         <tr><td>
             <hr/>
             <div class="menu">
-                <a href="/">Home</a> -
-                <a href="/help">Help</a> -
+                <a href="{$service_url}">Home</a> -
+                <a href="{$service_url}/help">Help</a> -
     
                 <xsl:choose>
                     <xsl:when test="not(string($ownerId))">
-                        <a href="/user/register">Create New Account</a> -
-                        <a href="/login">Login</a>
+                        <a href="{$service_url}/user/register">Create New Account</a> -
+                        <a href="{$service_url}/login">Login</a>
                     </xsl:when>
                     <xsl:otherwise>
                         User <b><xsl:value-of select="$ownerId"/></b> is logged on -
-                        <a href="/logout">Logout</a>
+                        <a href="{$service_url}/logout">Logout</a>
                     </xsl:otherwise>
                 </xsl:choose>
     
@@ -66,12 +66,12 @@
             <xsl:if test="string($ownerId)">
                 <table>
                 <tr><td>
-                    <form action="/jobs" method="POST">
+                    <form action="{$service_url}/jobs" method="POST">
                     <input type="submit" value="Create new job"/>
                     </form>
                 </td>
                 <td>
-                    <form action="/jobs" method="GET">
+                    <form action="{$service_url}/jobs" method="GET">
                     <input type="submit" value="List jobs"/>
                     </form>
                 </td></tr>

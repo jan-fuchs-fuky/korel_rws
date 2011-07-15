@@ -13,7 +13,7 @@
         <div class="errmsg"><xsl:value-of select="/register/errmsg"/></div>
     </xsl:if>
 
-    <form action="/user/register" method="POST" enctype="multipart/form-data">
+    <form action="{$service_url}/user/register" method="POST" enctype="multipart/form-data">
         <table>
         <tr>
             <td>First Name:</td>
@@ -47,7 +47,7 @@
             <td><input type="text" name="email" value="{/register/email}"/></td>
         </tr>
         <tr>
-            <td><img src="/mathproblem/{/register/mathproblem_png}"/>
+            <td><img src="{$service_url}/mathproblem/{/register/mathproblem_png}"/>
                 <input type="hidden" name="mathproblem_png" value="{/register/mathproblem_png}"/></td>
             <td><input type="text" name="mathproblem_solution"/></td>
             <td>This question is for testing whether you are a human visitor and to

@@ -366,7 +366,7 @@ def get_info(job_dir):
     return info
 
 def get_param(id, filename):
-    return "/jobs/%s/param/%s" % (id, filename)
+    return "%s/jobs/%s/param/%s" % (share.settings["service_url"], id, filename)
 
 def list(username, max_disk_space):
     dirs_dict = {}

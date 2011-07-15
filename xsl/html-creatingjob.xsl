@@ -10,7 +10,7 @@
 
 <xsl:template name="html.dynamic">
 <h2>Create new job</h2>
-<form action="/jobs" method="POST" enctype="multipart/form-data">
+<form action="{$service_url}/jobs" method="POST" enctype="multipart/form-data">
     <table>
     <tr>
         <td>Project name:</td>

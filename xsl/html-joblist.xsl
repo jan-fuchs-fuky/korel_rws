@@ -22,7 +22,7 @@
     <xsl:variable name="phase" select="uws:phase"/>
     <xsl:variable name="jobId" select="uws:jobId"/>
     <tr>
-        <td><a href="/jobs/{$jobId}"><b><xsl:value-of select="uws:jobId"/></b></a></td>
+        <td><a href="{$service_url}/jobs/{$jobId}"><b><xsl:value-of select="uws:jobId"/></b></a></td>
         <td><xsl:value-of select="uws:jobInfo/project"/></td>
         <td><xsl:value-of select="uws:startTime"/></td>
         <td><xsl:value-of select="uws:jobInfo/runningTime"/></td>
@@ -32,7 +32,7 @@
             <xsl:choose>
                 <xsl:when test="$phase='EXECUTING'">
                     <td>
-                        <form action="/jobs/{$jobId}/phase" method="POST">
+                        <form action="{$service_url}/jobs/{$jobId}/phase" method="POST">
                         <input type="hidden" name="PHASE" value="ABORT"/>
                         <input type="submit" value="Abort"/>
                         </form>
@@ -40,18 +40,18 @@
                 </xsl:when>
                 <xsl:otherwise>
                     <td>
-                        <form action="/jobs/{$jobId}/results" method="get">
+                        <form action="{$service_url}/jobs/{$jobId}/results" method="get">
                         <input type="submit" value="Show result"/>
                         </form>
                     </td>
                     <td>
-                        <form action="/jobs/{$jobId}" method="POST">
+                        <form action="{$service_url}/jobs/{$jobId}" method="POST">
                         <input type="hidden" name="ACTION" value="DELETE"/>
                         <input type="submit" value="Delete"/>
                         </form>
                     </td>
                     <td>
-                        <form action="/jobs/{$jobId}/again" method="get">
+                        <form action="{$service_url}/jobs/{$jobId}/again" method="get">
                         <input type="submit" value="Run again"/>
                         </form>
                     </td>
@@ -61,7 +61,7 @@
 
         <td>
         <xsl:if test="$phase='PENDING'">
-            <form action="/jobs/{$jobId}/phase" method="POST">
+            <form action="{$service_url}/jobs/{$jobId}/phase" method="POST">
             <input type="hidden" name="PHASE" value="RUN"/>
             <input type="submit" value="Run"/>
             </form>

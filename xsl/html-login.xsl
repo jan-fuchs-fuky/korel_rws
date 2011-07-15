@@ -8,7 +8,7 @@
 
 <xsl:template name="html.dynamic">
     <h2>Login</h2>
-    <form action="/login" method="POST">
+    <form action="{$service_url}/login" method="POST">
         <table>
             <tr>
                 <td>Username:</td>
