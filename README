@@ -11,11 +11,7 @@ $ curl -H "Accept: application/xml" -k https://127.0.0.1:8000
 
 Balicky z Debianu:
 
-    python2.6
-    python2.6-minimal
-    python-bcrypt
-    python-imaging
-    python-lxml
+    # aptitude install python2.6 python2.6-minimal python-bcrypt python-imaging python-lxml
 
 Podrobnosti:
 
