@@ -8,7 +8,7 @@
 orgfile="korel.tmp"
 procfile="proc_korel.tmp"
 gplot="plottmp.gp"
-pngfile="plottmp.png"
+pngfile="plot05tmp.png"
 
 echo "# gnuplot driver for plotting korel.dat">$gplot
 echo "set key off" >> $gplot

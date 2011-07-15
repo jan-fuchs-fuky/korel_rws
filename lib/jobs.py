@@ -25,12 +25,12 @@ import share
 JOBS_PATH = "./jobs"
 
 korel_plots = [
-    [ "plotdat.png", "korel.dat" ],
-    [ "plotmap.png", "korermap.dat" ],
-    [ "ploto-c.png", "korel.o-c" ],
-    [ "plotphg.png", "phg.ps" ],
-    [ "plotrv.png",  "korel.rv" ],
-    [ "plottmp.png", "korel.tmp" ],
+    [ "plot01phg.png", "phg.ps" ],
+    [ "plot02map.png", "korermap.dat" ],
+    [ "plot03rv.png",  "korel.rv" ],
+    [ "plot04dat.png", "korel.dat" ],
+    [ "plot05tmp.png", "korel.tmp" ],
+    [ "plot06o-c.png", "korel.o-c" ],
 ]
 
 def is_valid_xml_char(char):

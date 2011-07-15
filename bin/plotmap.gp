@@ -1,5 +1,5 @@
 set term png
-set output "plotmap.png"
+set output "plot02map.png"
 file="korermap.dat"
 dx=1.5
 dy=0.02

@@ -8,7 +8,7 @@
 orgfile="korermap.dat"
 procfile="proc_korermap.dat"
 gplot="plotmap.gp"
-pngfile="plotmap.png"
+pngfile="plot02map.png"
 resfile="korel.res"
 
 cat "$resfile" |awk \

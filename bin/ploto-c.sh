@@ -8,7 +8,7 @@
 orgfile="korel.o-c"
 procfile="proc_korel.o-c"
 gplot="ploto-c.gp"
-pngfile="ploto-c.png"
+pngfile="plot06o-c.png"
 
 echo "# gnuplot driver for plotting korel.dat">$gplot
 echo "set key off" >> $gplot
