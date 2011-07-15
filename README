@@ -7,6 +7,39 @@ notebook$ ssh -L 8000:localhost:8000 fuky@alioth
 
 $ curl -H "Accept: application/xml" -k https://127.0.0.1:8000
 
+*** Python dependencies ***
+
+Balicky z Debianu:
+
+    python2.6
+    python2.6-minimal
+    python-bcrypt
+    python-imaging
+    python-lxml
+
+Podrobnosti:
+
+    email => python2.6
+    lxml => python-lxml
+    optparse => python2.6-minimal
+    StringIO => python2.6-minimal
+    bcrypt => python-bcrypt
+    ConfigParser => python2.6-minimal
+    Image => python-imaging
+    ImageDraw => python-imaging
+    ImageFont => python-imaging
+    logging => python2.6-minimal
+    mimetypes => python2.6
+    os => python2.6-minimal
+    random => python2.6-minimal
+    re => python2.6-minimal
+    smtplib => python2.6
+    subprocess => python2.6-minimal
+    tempfile => python2.6-minimal
+    traceback => python2.6-minimal
+    urllib => python2.6
+    uuid => python2.6
+
 *** Spousteni ***
 
 $ ln -s korel_rws-local.cfg korel_rws.cfg
