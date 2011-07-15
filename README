@@ -7,6 +7,12 @@ notebook$ ssh -L 8000:localhost:8000 fuky@alioth
 
 $ curl -H "Accept: application/xml" -k https://127.0.0.1:8000
 
+*** https://stelweb.asu.cas.cz/vo-korel ***
+
+slon.stel# cat /etc/apache2/sites-enabled/all |grep 'ProxyPass.*korel.*'
+ProxyPass         /vo-korel https://korel.stel:8000
+ProxyPassReverse  /vo-korel https://korel.stel:8000
+
 *** Python dependencies ***
 
 Balicky z Debianu:
