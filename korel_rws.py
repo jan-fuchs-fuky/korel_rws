@@ -193,6 +193,13 @@ def register_user(params):
 
     return ""
 
+class UpgradingServer:
+    @cherrypy.expose
+    def default(self, *vpath, **params):
+        username = ""
+
+        return template.xml2result("<ownerId>%s</ownerId>" % username, "upgrading")
+
 class RootServer:
     @cherrypy.expose
     def index(self):
@@ -488,6 +495,7 @@ smtp_options.smtp_password = cfg.get("smtp", "password")
 smtp_options.smtp_ssl = cfg.getboolean("smtp", "ssl")
 
 share.settings["service_url"] = cfg.get("server", "service_url")
+share.settings["upgrading"] = cfg.getboolean("server", "upgrading")
 share.settings["max_process"] = cfg.getint("korel", "max_process")
 share.settings["max_memory"] = cfg.getint("korel", "max_memory")
 share.settings["max_disk_space"] = cfg.getint("korel", "max_disk_space")
@@ -526,6 +534,14 @@ config = {
         'tools.staticdir.on': True,
         'tools.staticdir.dir': 'css',
     },
+
+    '/images': {
+        'tools.staticdir.on': True,
+        'tools.staticdir.dir': 'images',
+    },
 } 
 
-application = cherrypy.Application(RootServer(), script_name=None, config=config)
+if (share.settings["upgrading"]):
+    application = cherrypy.Application(UpgradingServer(), script_name=None, config=config)
+else:
+    application = cherrypy.Application(RootServer(), script_name=None, config=config)
