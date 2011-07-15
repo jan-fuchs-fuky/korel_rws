@@ -46,13 +46,21 @@
         </p>
 
         <xsl:for-each select="result/plot">
-            <h2>Picture <xsl:value-of select="."/> generated from file <xsl:value-of select="@source"/></h2>
+            <h2>
+                Picture <code><xsl:value-of select="."/></code>
+                from file <code><xsl:value-of select="@source"/></code>
+            </h2>
+
             <p><img src="/jobs/{$id}/results/{.}" alt="{.}"/></p>
             <hr/>
         </xsl:for-each>
 
         <xsl:for-each select="result/component">
-            <h2>Picture <xsl:value-of select="."/> generated from file korel.spe</h2>
+            <h2>
+                Picture <code><xsl:value-of select="."/></code>
+                from file <code>korel.spe</code>
+            </h2>
+
             <p><img src="/jobs/{$id}/results/{.}" alt="{.}"/></p>
         </xsl:for-each>
     </xsl:if>
