@@ -1,6 +1,12 @@
-Run new job:
+*** Curl examples ***
 
-    $ curl --insecure -u admin:heslo -X POST https://localhost:8000/jobs
+    $ curl --insecure -c /tmp/korel_rws.cookies -d "username=fuky&password=heslo" https://localhost/login
+
+    $ cat /tmp/korel_rws.cookies 
+    localhost	FALSE	/	FALSE	0	KorelAuthorizationKey	7ed09935-3edc-472c-b4e6-b484cf15dcea
+    localhost	FALSE	/	FALSE	0	KorelUserName	fuky
+
+    $ curl --insecure -b "KorelUserName=fuky; KorelAuthorizationKey=7ed09935-3edc-472c-b4e6-b484cf15dcea" -X GET https://localhost/jobs
 
    korel$ ssh -R 8000:localhost:8000 fuky@alioth
 notebook$ ssh -L 8000:localhost:8000 fuky@alioth
