@@ -1,8 +1,14 @@
-- pridat link pro stazeni celeho jobu
+*** Priority 1 ***
 
-- otestovat/zprovoznit posilani XML
+*** Priority 2 ***
 
-- udelat klienta, ktery vyuziva XML
+    - pridat link pro stazeni celeho jobu
+    
+    - otestovat/zprovoznit posilani XML
+    
+    - udelat klienta, ktery vyuziva XML
+    
+    - udelat utility pro zjistovani aktivity na Korel RWS napr. pocet bezicich
+      jobu, prihlasenych uzivatelu atp.
 
-- udelat utility pro zjistovani aktivity na Korel RWS napr. pocet bezicich
-  jobu, prihlasenych uzivatelu atp.
+*** Priority 3 ***
