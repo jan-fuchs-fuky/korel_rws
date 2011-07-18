@@ -162,12 +162,16 @@ class KorelScheduler():
             job_dir = fo.readline().strip()
             fo.close()
     
-            fo = open("%s/.grant" % job_dir, "w")
-            fo.write("%i\n" % os.getpid())
-            fo.close()
-    
-            os.remove(job_path)
-            self.logger.info("%s granted" % job_dir)
+            try:
+                fo = open("%s/.grant" % job_dir, "w")
+                fo.write("%i\n" % os.getpid())
+                fo.close()
+            except:
+                self.logger.exception("skipping job from queue")
+            else:
+                self.logger.info("%s granted" % job_dir)
+            finally:
+                os.remove(job_path)
     
             i += 1
 
