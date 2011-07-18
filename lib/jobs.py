@@ -323,6 +323,10 @@ def delete(username, id):
 
     call(["rm", "-rf", job_dir])
 
+    job_tgz = "%s.tgz" % job_dir
+    if (os.path.isfile(job_tgz)):
+        os.remove(job_tgz)
+
     raise cherrypy.HTTPRedirect(["/jobs"], 303)
 
 def human_time(seconds, spare=0):
