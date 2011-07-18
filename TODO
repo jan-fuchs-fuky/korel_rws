@@ -1,8 +1,4 @@
-- zjistit proc je du spoustene pres subprocess.Popen() na VS Korel pomale (3s)
-
 - pridat link pro stazeni celeho jobu
-
-- zobrazovat diskovou kvotu
 
 - otestovat/zprovoznit posilani XML
 

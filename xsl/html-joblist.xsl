@@ -9,6 +9,17 @@
 <!-- $URL$ -->
 
 <xsl:template name="html.dynamic">
+    <p>
+        <xsl:variable name="disk_full" select="uws:joblist/disk_full"/>
+        <xsl:if test="$disk_full='True'">
+            <div class="errmsg">Disk Quota Exceeded.</div>
+        </xsl:if>
+
+        Using <xsl:value-of select="uws:joblist/disk_usage"/>
+        (<xsl:value-of select="uws:joblist/disk_usage_pct"/>%)
+        of your <xsl:value-of select="uws:joblist/disk_space"/>.
+    </p>
+
     <table>
     <tr>
         <td><b>ID</b></td>

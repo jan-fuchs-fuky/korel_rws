@@ -381,15 +381,9 @@ def list(username, max_disk_space):
     else:
         disk_full = False
 
-    disk_usage_pct = "%.0f" % (disk_usage / (max_disk_space * 0.01))
+    disk_usage_pct = "%.1f" % (disk_usage / (max_disk_space * 0.01))
     disk_usage = share.bytes2human(disk_usage)
     disk_space = share.bytes2human(max_disk_space)
-
-    # TODO
-    #result += "<disk_usage>%s</disk_usage>\n" % disk_usage
-    #result += "<disk_usage_pct>%s</disk_usage_pct>\n" % disk_usage_pct
-    #result += "<disk_space>%s</disk_space>\n" % disk_space
-    #result += "<disk_full>%s</disk_full>\n" % disk_full
 
     root, dirs, files = os.walk("%s/%s" % (JOBS_PATH, username)).next()
     for dir in dirs:
@@ -402,6 +396,12 @@ def list(username, max_disk_space):
 
     result = []
     result.append("<uws:joblist %s>" % share.XMLNS)
+
+    result.append("<disk_usage>%s</disk_usage>" % disk_usage)
+    result.append("<disk_usage_pct>%s</disk_usage_pct>" % disk_usage_pct)
+    result.append("<disk_space>%s</disk_space>" % disk_space)
+    result.append("<disk_full>%s</disk_full>" % disk_full)
+
     result.append('<uws:ownerId>%s</uws:ownerId>' % username)
     # sort key dir by value mtime
     for item in sorted(dirs_dict.iteritems(), key=lambda (k,v): (v,k), reverse=True):
