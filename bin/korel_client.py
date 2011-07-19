@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import time
 import urllib
 import urllib2
 import lxml.etree as etree
@@ -12,6 +13,7 @@ import MultipartPostHandler
 class KorelClient():
     def __init__(self):
         self.service_url = "https://stelweb.asu.cas.cz/vo-korel"
+        #self.service_url = "https://localhost"
 
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(), MultipartPostHandler.MultipartPostHandler)
         urllib2.install_opener(opener)
@@ -69,10 +71,53 @@ class KorelClient():
 
         result = self.POST("/jobs", params)
         print "%s %s" % (result.code, result.msg)
-        print result.read()
+        result_xml = result.read()
 
-    def GET(self):
-        request = urllib2.Request("https://stelweb.asu.cas.cz/vo-korel/jobs/1")
+        job_etree = etree.parse(StringIO(result_xml))
+        jobid_elt = job_etree.xpath("/uws:job/uws:jobId", namespaces={"uws": "http://www.ivoa.net/xml/UWS/v1.0rc3"})
+        if (jobid_elt):
+            jobid = jobid_elt[0].text
+
+        params = { "PHASE": "RUN" }
+        phase_url = "/jobs/%s/phase" % jobid
+        result = self.POST(phase_url, params)
+        print "%s %s" % (result.code, result.msg)
+
+        value = ""
+        while (value != "COMPLETED"):
+            result = self.GET(phase_url)
+            result_xml = result.read()
+            phase_etree = etree.parse(StringIO(result_xml))
+
+            value_elt = phase_etree.xpath("/phase/value")
+            if (value_elt):
+                value = value_elt[0].text
+
+                print "phase = %s" % value
+            else:
+                break
+
+            time.sleep(1)
+
+        filenames = [
+            "korel.o-c",
+            "korel.res",
+            "korel.rv",
+            "korel.spe",
+        ]
+
+        for filename in filenames:
+            result = self.GET("/jobs/%s/results/%s" % (jobid, filename))
+            if (result.code == 200):
+                fo = open(filename, "w")
+                fo.write(result.read())
+                fo.close()
+
+    def GET(self, action):
+        url = "%s%s" % (self.service_url, action)
+        print "GET %s" % url
+
+        request = urllib2.Request(url)
         request.add_header("Accept", "text/xml")
         
         return urllib2.urlopen(request)
@@ -81,7 +126,7 @@ class KorelClient():
         url = "%s%s" % (self.service_url, action)
         print "POST %s" % url
 
-        request = urllib2.Request(url, urllib.urlencode(params))
+        request = urllib2.Request(url, params)
         request.add_header("Accept", "text/xml")
         
         return urllib2.urlopen(request)
