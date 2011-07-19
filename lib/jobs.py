@@ -229,6 +229,7 @@ def again(username, email, id):
     try:
         job_dir = get_job_dir(username, id)
         korel_dat = "%s/korel.dat" % job_dir
+        korel_tmp = "%s/korel.tmp" % job_dir
         korel_par = "%s/korel.par" % job_dir
         project = "%s/project" % job_dir
 
@@ -242,6 +243,9 @@ def again(username, email, id):
         fo.close()
 
         os.link(korel_dat, "%s/korel.dat" % new_job_dir)
+
+        if (os.path.isfile(korel_tmp)):
+            os.link(korel_tmp, "%s/korel.tmp" % new_job_dir)
 
         result = []
         result.append("<again>")
