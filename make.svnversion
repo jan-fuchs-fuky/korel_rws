@@ -4,7 +4,7 @@ REV=$(svnversion -n .)
 LAST_CHANGED_DATE=$(svn info -r ${REV%M*} |fgrep "Last Changed Date:")
 
 cat <<EOF >lib/svnversion.py
-#!/usr/bin/env python2.6
+#!/usr/bin/env python
 
 # Generated automatically from ../make.svnversion. DO NOT EDIT.
 
