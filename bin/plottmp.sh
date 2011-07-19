@@ -10,6 +10,11 @@ procfile="proc_korel.tmp"
 gplot="plottmp.gp"
 pngfile="plot05tmp.png"
 
+if [ $(stat --printf=%s $orgfile) -eq 0 ]; then
+    echo "Ignoring empty $orgfile"
+    exit
+fi
+
 echo "# gnuplot driver for plotting korel.dat">$gplot
 echo "set key off" >> $gplot
 echo "set autoscale fix" >> $gplot
