@@ -1,7 +1,7 @@
 #!/bin/bash
 
-REV=$(svnversion -n .)
-LAST_CHANGED_DATE=$(svn info -r ${REV%M*} |fgrep "Last Changed Date:")
+REV=$(git log --pretty=format:"%h" -1)
+LAST_CHANGED_DATE=$(git log --pretty=format:"%ad" -1)
 
 cat <<EOF >lib/svnversion.py
 #!/usr/bin/env python
