@@ -4,9 +4,7 @@
 """ Korel Universal Worker Service """
 
 #
-# Author: Jan Fuchs <fuky@sunstel.asu.cas.cz>
-# $Date$
-# $Rev$
+# Author: Jan Fuchs <fuky@asu.cas.cz>
 #
 
 import os
@@ -173,7 +171,7 @@ def register_user(params):
             return "Please enter other login. Login '%s' exists." % params["login"]
 
         salt = bcrypt.gensalt()
-        hashed_password = bcrypt.hashpw(params["password"], salt)
+        hashed_password = bcrypt.hashpw(params["password"].encode("utf8"), salt)
 
         user_xml  = "<?xml version='1.0' encoding='UTF-8'?>\n"
         user_xml += "<user allow='false'>\n"
@@ -465,7 +463,7 @@ class RootServer:
             hp = self.user_settings["hashed_password"]
             salt = hp[:hp.rfind("$")+23]
 
-            if (bcrypt.hashpw(password, salt) != hp):
+            if (bcrypt.hashpw(password.encode("utf8"), salt) != hp):
                 return False
 
             try:
