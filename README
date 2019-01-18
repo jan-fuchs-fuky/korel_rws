@@ -23,6 +23,10 @@ slon.stel# cat /etc/apache2/sites-enabled/all |grep 'ProxyPass.*korel.*'
 ProxyPass         /vo-korel https://korel.stel:8000
 ProxyPassReverse  /vo-korel https://korel.stel:8000
 
+*** packages ***
+
+# apt install imagemagick gnuplot apache2 libapache2-mod-wsgi
+
 *** Python dependencies ***
 
 Balicky z Debianu:
