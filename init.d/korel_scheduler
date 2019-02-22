@@ -1,5 +1,9 @@
 #! /bin/bash
 
+#
+# DEPRECATED!!!
+#
+
 ### BEGIN INIT INFO
 # Provides:          korel_scheduler
 # Required-Start:    $local_fs $remote_fs $network $syslog $named
