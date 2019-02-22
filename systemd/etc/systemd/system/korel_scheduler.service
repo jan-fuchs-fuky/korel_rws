@@ -1,0 +1,15 @@
+[Unit]
+Description=korel_scheduler
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+Type=forking
+User=korel
+ExecStart=/usr/bin/python2.7 /opt/korel_rws/korel_scheduler -d
+KillMode=control-group
+StandardOutput=journal+console
+PIDFile=/opt/korel_rws/var/run/korel_scheduler.pid
+
+[Install]
+WantedBy=default.target
